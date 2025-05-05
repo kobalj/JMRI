@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/xml/XSLT/aspecttable.xsl" type="text/xsl"?>
+
+<aspecttable
+    xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation = "http://jmri.org/xml/schema/aspecttable.xsd"
+>
+
+  <name>DR Hl 1959</name>
+    <date>1959</date>
+  <reference>German DR signals Hl System 1959</reference>
+
+  <copyright xmlns="http://docbook.org/ns/docbook">
+    <year>2025</year>
+    <holder>JMRI</holder>
+  </copyright>
+
+  <authorgroup xmlns="http://docbook.org/ns/docbook">
+    <author>
+        <personname>
+          <firstname>Jure</firstname>
+          <surname>Kobal</surname>
+        </personname>
+        <email>kobalj@gmail.com</email>
+    </author>   
+  </authorgroup>
+
+  <revhistory xmlns="http://docbook.org/ns/docbook">
+    <revision>
+        <revnumber>1</revnumber>
+        <date>2025-01-xx</date>
+        <authorinitials>JK</authorinitials>
+        <revremark>Initial version</revremark>
+    </revision>    
+  </revhistory>
+
+  <aspects>
+    <aspect>
+      <name>Hl1</name>
+      <indication>Proceed with maximum speed</indication>
+      <description>Top green light</description>
+      <speed>Normal</speed>
+      <speed2>Normal</speed2>
+      <dccAspect>1</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl2</name>
+      <indication>Proceed with 100 km/h then with maximum speed</indication>
+      <description>Top green light + bottom yellow light + green light stripes</description>
+      <speed>Limited</speed>
+      <speed2>Normal</speed2>
+      <dccAspect>2</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl3a</name>
+      <indication>Proceed with 40 km/h, then with maximum speed</indication>
+      <description>Top green light + bottom yellow light</description>
+      <speed>Slow</speed>
+      <speed2>Normal</speed2>
+      <dccAspect>3</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl3b</name>
+      <indication>Proceed with 60 km/h, then with maximum speed</indication>
+      <description>Top green light + bottom yellow light + yellow light stripes</description>
+      <speed>Medium</speed>
+      <speed2>Normal</speed2>
+      <dccAspect>4</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl4</name>
+      <indication>Moderate maximum speed to 100 km/h</indication>
+      <description>Top green light flashing</description>
+      <speed>Limited</speed>
+      <speed2>Limited</speed2>
+      <dccAspect>5</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl5</name>
+      <indication>Proceed with 100 km/h</indication>
+      <description>Top green light flashing + bottom yellow light + green light stripes</description>
+      <speed>Limited</speed>
+      <speed2>Limited</speed2>
+      <dccAspect>6</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl6a</name>
+      <indication>Proceed with 40 km/h, then with 100 km/h</indication>
+      <description>Top green light flashing + bottom yellow light</description>
+      <speed>Slow</speed>
+      <speed2>Limited</speed2>
+      <dccAspect>7</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl6b</name>
+      <indication>Proceed with 60 km/h, then with 100 km/h</indication>
+      <description>Top green light flashing + bottom yellow light + yellow light stripes</description>
+      <speed>Medium</speed>
+      <speed2>Limited</speed2>
+      <dccAspect>8</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl7</name>
+      <indication>Moderate maximum speed to 100 km/h</indication>
+      <description>Top yellow light flashing</description>
+      <speed>Limited</speed>
+      <speed2>Limited</speed2>
+      <dccAspect>9</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl8</name>
+      <indication>Moderate maximum speed to 100 km/h</indication>
+      <description>Top yellow light flashing + bottom yellow light + green light stripes</description>
+      <speed>Normal</speed>
+      <speed2>Limited</speed2>
+      <dccAspect>10</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl9a</name>
+      <indication>Proceed with 40 km/h, then with 40 or 60 km/h</indication>
+      <description>Top yellow light flashing + bottom yellow light</description>
+      <speed>Slow</speed>
+      <speed2>Slow</speed2>
+      <dccAspect>11</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl9b</name>
+      <indication>Proceed with 40 km/h, then with 40 or 60 km/h</indication>
+      <description>Top yellow light flashing + bottom yellow light + yellow light stripes</description>
+      <speed>Slow</speed>
+      <speed2>Slow</speed2>
+      <dccAspect>12</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl10</name>
+      <indication>Proceed with 60 km/h, then with 40 or 60 km/h</indication>
+      <description>Top yellow light</description>
+      <speed>Limited</speed>
+      <speed2>Limited</speed2>
+      <dccAspect>13</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl11</name>
+      <indication>Moderate speed 100 km/h, expect stop</indication>
+      <description>Top yellow light + bottom yellow light + green light stripes</description>
+      <speed>Limited</speed>
+      <speed2>Stop</speed2>
+      <dccAspect>14</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl12a</name>
+      <indication>Moderate speed 40 km/h, expect stop</indication>
+      <description>Top yellow light + bottom yellow light</description>
+      <speed>Slow</speed>
+      <speed2>Stop</speed2>
+      <dccAspect>15</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl12b</name>
+      <indication>Moderate speed 60 km/h, expect stop</indication>
+      <description>Top yellow light + bottom yellow light + yellow light stripes</description>
+      <speed>Medium</speed>
+      <speed2>Stop</speed2>
+      <dccAspect>16</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl13</name>
+      <indication>Stop</indication>
+      <description>Red light</description>
+      <speed>Stop</speed>
+      <speed2>Stop</speed2>
+      <dccAspect>17</dccAspect>
+    </aspect>
+ 
+    <aspect>
+      <name>Hl13+Zs1</name>
+      <indication>Stop</indication>
+      <description>Pass signal Hl13 or faulty light main signal without written command</description>
+      <speed>Stop</speed>
+      <speed2>Stop</speed2>
+      <dccAspect>18</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Hl13+Ra12</name>
+      <indication>Stop for trains, shunting allowed</indication>
+      <description>Pass signal Hl13 or faulty light main signal without written command</description>
+      <speed>Stop</speed>
+      <speed2>Stop</speed2>
+      <dccAspect>19</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Ra11a</name>
+      <indication>Stop for all trains, shunting not allowed</indication>
+      <description></description>
+      <speed>Stop</speed>
+      <speed2>Stop</speed2>
+      <dccAspect>20</dccAspect>
+    </aspect>
+    
+    <aspect>
+      <name>Ra12</name>
+      <indication>Stop for trains, shunting allowed</indication>
+      <description></description>
+      <speed>Stop</speed>
+      <speed2>Stop</speed2>
+      <dccAspect>21</dccAspect>
+    </aspect>
+    
+  </aspects>
+  
+  <appearancefiles>
+    <appearancefile href="appearance-block.xml"/>
+  </appearancefiles>
+
+</aspecttable>

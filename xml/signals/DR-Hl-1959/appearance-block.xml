@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/xml/XSLT/appearancetable.xsl" type="text/xsl"?>
+
+<appearancetable
+    xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation = "http://jmri.org/xml/schema/appearancetable.xsd"
+>
+  
+
+<copyright xmlns="http://docbook.org/ns/docbook">
+    <year>2025</year>
+    <holder>JMRI</holder>
+  </copyright>
+
+  <authorgroup xmlns="http://docbook.org/ns/docbook">
+    <author>
+        <personname>
+          <firstname>Jure</firstname>
+          <surname>Kobal</surname>
+        </personname>
+        <email>kobalj@gmail.com</email>
+    </author>   
+  </authorgroup>
+  
+  <revhistory xmlns="http://docbook.org/ns/docbook">
+    <revision>
+        <revnumber>1</revnumber>
+        <date>2025-01-xx</date>
+        <authorinitials>JK</authorinitials>
+        <revremark>Initial version</revremark>
+    </revision>    
+  </revhistory>
+  
+  <aspecttable>DR-Hl-1959</aspecttable>
+  <name>Block signal</name>
+  <reference></reference>
+  <description>Signal to use in blocks.</description>
+  
+  <appearances>
+    <appearance>
+      <aspectname>Hl1</aspectname>
+      <show>green</show>
+    </appearance>
+    <appearance>
+      <aspectname>Hl4</aspectname>
+      <show>green</show>
+    </appearance>
+    <appearance>
+      <aspectname>Hl7</aspectname>
+      <show>yellow</show>
+    </appearance>
+    <appearance>
+      <aspectname>Hl10</aspectname>
+      <show>yellow</show>
+    </appearance>
+    <appearance>
+      <aspectname>Hl13</aspectname>
+      <show>red</show>
+    </appearance>
+  </appearances>
+  
+  <!-- Start of Specific Appearances list -->
+  <specificappearances>
+    <danger>
+      <aspect>Hl13</aspect>
+    </danger>
+    <held>
+      <aspect>Hl13</aspect>
+    </held>
+  </specificappearances>
+  <!-- End of Specific Appearances list -->
+  
+  
+  
+  
+  <!-- Start of Aspect Mapping -->
+  <aspectMappings>
+
+    <aspectMapping>
+      <advancedAspect>Hl13</advancedAspect>
+      <ourAspect>Hl1</ourAspect>
+    </aspectMapping>
+
+    <aspectMapping>
+      <advancedAspect>Hl4</advancedAspect>
+      <ourAspect>Hl1</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl7</advancedAspect>
+      <ourAspect>Hl1</ourAspect>
+    </aspectMapping>
+
+    <aspectMapping>
+      <advancedAspect>Hl10</advancedAspect>
+      <ourAspect>Hl1</ourAspect>
+    </aspectMapping>
+
+  </aspectMappings>
+  <!-- End of Aspect Mapping -->
+  
+</appearancetable>

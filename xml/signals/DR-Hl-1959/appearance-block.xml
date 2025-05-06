@@ -70,32 +70,87 @@
   </specificappearances>
   <!-- End of Specific Appearances list -->
   
-  
-  
-  
   <!-- Start of Aspect Mapping -->
   <aspectMappings>
-
     <aspectMapping>
-      <advancedAspect>Hl13</advancedAspect>
+      <advancedAspect>Hl1</advancedAspect>
       <ourAspect>Hl1</ourAspect>
     </aspectMapping>
-
+    
+    <aspectMapping>
+      <advancedAspect>Hl2</advancedAspect>
+      <ourAspect>Hl4</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl3a</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl3b</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+    </aspectMapping>
+    
     <aspectMapping>
       <advancedAspect>Hl4</advancedAspect>
       <ourAspect>Hl1</ourAspect>
     </aspectMapping>
     
     <aspectMapping>
+      <advancedAspect>Hl5</advancedAspect>
+      <ourAspect>Hl4</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl6a</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl6b</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
       <advancedAspect>Hl7</advancedAspect>
       <ourAspect>Hl1</ourAspect>
     </aspectMapping>
-
+    
     <aspectMapping>
-      <advancedAspect>Hl10</advancedAspect>
-      <ourAspect>Hl1</ourAspect>
+      <advancedAspect>Hl8</advancedAspect>
+      <ourAspect>Hl4</ourAspect>
     </aspectMapping>
-
+    
+    <aspectMapping>
+      <advancedAspect>Hl9a</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl9b</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl11</advancedAspect>
+      <ourAspect>Hl4</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl12a</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl12b</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+    </aspectMapping>
+    
+    <aspectMapping>
+      <advancedAspect>Hl13</advancedAspect>
+      <ourAspect>Hl10</ourAspect>
+    </aspectMapping>
   </aspectMappings>
   <!-- End of Aspect Mapping -->
   

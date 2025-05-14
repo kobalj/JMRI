@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/xml/XSLT/appearancetable.xsl" type="text/xsl"?>
+
+<appearancetable
+    xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation = "http://jmri.org/xml/schema/appearancetable.xsd"
+>
+  
+
+<copyright xmlns="http://docbook.org/ns/docbook">
+    <year>2025</year>
+    <holder>JMRI</holder>
+  </copyright>
+
+  <authorgroup xmlns="http://docbook.org/ns/docbook">
+    <author>
+        <personname>
+          <firstname>Jure</firstname>
+          <surname>Kobal</surname>
+        </personname>
+        <email>kobalj@gmail.com</email>
+    </author>   
+  </authorgroup>
+  
+  <revhistory xmlns="http://docbook.org/ns/docbook">
+    <revision>
+        <revnumber>1</revnumber>
+        <date>2025-05-xx</date>
+        <authorinitials>JK</authorinitials>
+        <revremark>Initial version</revremark>
+    </revision>    
+  </revhistory>
+  
+  <aspecttable>DR-Hl-1959</aspecttable>
+  <name>Main signal</name>
+  <reference></reference>
+  <description>Signal to use in blocks.</description>
+  
+  <appearances>
+    <appearance>
+      <aspectname>Hl1</aspectname>
+      <show>green</show>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Hl3a</aspectname>
+      <show>green</show>
+      <show>yellow</show>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Hl4</aspectname>
+      <show>flashgreen</show>
+    </appearance>
+    
+    <appearance>
+        <aspectname>Hl6a</aspectname>
+        <show>flashgreen</show>
+        <show>yellow</show>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Hl7</aspectname>
+      <show>flashyellow</show>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Hl9a</aspectname>
+      <show>yellow</show>
+      <show>flashyellow</show>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Hl10</aspectname>
+      <show>yellow</show>
+    </appearance>
+    
+    <appearance>
+        <aspectname>Hl12a</aspectname>
+        <show>yellow</show>
+        <show>yellow</show>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Hl13</aspectname>
+      <show>red</show>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Hl13+Zs1</aspectname>
+      <show>red</show> <!-- for now use lunar since no white available -->
+      <show>flashlunar</show>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Hl13+Ra12</aspectname>
+      <show>red</show>
+      <show>lunar</show> <!-- for now use lunar since no white available -->
+      <show>lunar</show> <!-- for now use lunar since no white available -->
+    </appearance>
+
+  </appearances>
+  
+  <!-- Start of Specific Appearances list -->
+  <specificappearances>
+    <danger>
+      <aspect>Hp13</aspect>
+    </danger>
+    <held>
+      <aspect>Hp13</aspect>
+    </held>
+  </specificappearances>
+  <!-- End of Specific Appearances list -->
+  
+  <!-- Start of Aspect Mapping -->
+  <aspectMappings>
+
+  </aspectMappings>
+  <!-- End of Aspect Mapping -->
+  
+  
+</appearancetable>

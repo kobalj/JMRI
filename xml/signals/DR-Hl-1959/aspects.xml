@@ -228,6 +228,7 @@
   
   <appearancefiles>
     <appearancefile href="appearance-block.xml"/>
+    <appearancefile href="appearance-main.xml"/>
   </appearancefiles>
 
 </aspecttable>

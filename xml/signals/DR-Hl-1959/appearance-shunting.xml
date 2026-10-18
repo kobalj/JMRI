@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/xml/XSLT/appearancetable.xsl" type="text/xsl"?>
+
+<appearancetable
+    xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation = "http://jmri.org/xml/schema/appearancetable.xsd"
+>
+  
+
+<copyright xmlns="http://docbook.org/ns/docbook">
+    <year>2025</year>
+    <holder>JMRI</holder>
+  </copyright>
+
+  <authorgroup xmlns="http://docbook.org/ns/docbook">
+    <author>
+        <personname>
+          <firstname>Jure</firstname>
+          <surname>Kobal</surname>
+        </personname>
+        <email>kobalj@gmail.com</email>
+    </author>   
+  </authorgroup>
+  
+  <revhistory xmlns="http://docbook.org/ns/docbook">
+    <revision>
+        <revnumber>1</revnumber>
+        <date>2025-01-xx</date>
+        <authorinitials>JK</authorinitials>
+        <revremark>Initial version</revremark>
+    </revision>    
+  </revhistory>
+  
+  <aspecttable>DR-Hl-1959</aspecttable>
+  <name>Shunting signal</name>
+  <reference></reference>
+  <description>???</description>
+  
+  <appearances>
+    <appearance>
+      <aspectname>Ra11a</aspectname>
+      <show>dark</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/shunting/ra11a.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/shunting/ra11a.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/shunting/ra11a.gif</imagelink>
+    </appearance>
+    
+    <appearance>
+      <aspectname>Ra12</aspectname>
+      <show>lunar</show>
+      <show>lunar</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/shunting/ra12.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/shunting/ra12.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/shunting/ra12.gif</imagelink>
+    </appearance>
+  </appearances>
+  
+  <!-- Start of Specific Appearances list -->
+  <specificappearances>
+    <danger>
+      <aspect>Ra11a</aspect>
+    </danger>
+    <held>
+      <aspect>Ra11a</aspect>
+    </held>
+  </specificappearances>
+  <!-- End of Specific Appearances list -->
+    
+</appearancetable>

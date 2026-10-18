@@ -229,6 +229,8 @@
   <appearancefiles>
     <appearancefile href="appearance-block.xml"/>
     <appearancefile href="appearance-main.xml"/>
+    <appearancefile href="appearance-main_full.xml"/>
+    <appearancefile href="appearance-shunting.xml"/>
   </appearancefiles>
 
 </aspecttable>

@@ -40,22 +40,39 @@
     <appearance>
       <aspectname>Hl1</aspectname>
       <show>green</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/block/hl1.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/block/hl1.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/block/hl1.gif</imagelink>
     </appearance>
     <appearance>
       <aspectname>Hl4</aspectname>
-      <show>green</show>
+      <show>flashgreen</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/block/hl4.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/block/hl4.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/block/hl4.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/block/hl4-noflash.gif</imagelink>
     </appearance>
     <appearance>
       <aspectname>Hl7</aspectname>
-      <show>yellow</show>
+      <show>flashyellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/block/hl7.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/block/hl7.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/block/hl7.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/block/hl7-noflash.gif</imagelink>
     </appearance>
     <appearance>
       <aspectname>Hl10</aspectname>
       <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/block/hl10.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/block/hl10.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/block/hl10.gif</imagelink>
     </appearance>
     <appearance>
       <aspectname>Hl13</aspectname>
       <show>red</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/block/hl13.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/block/hl13.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/block/hl13.gif</imagelink>
     </appearance>
   </appearances>
   

@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/xml/XSLT/appearancetable.xsl" type="text/xsl"?>
+
+<appearancetable
+    xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation = "http://jmri.org/xml/schema/appearancetable.xsd"
+>
+
+  <copyright xmlns="http://docbook.org/ns/docbook">
+    <year>2025</year>
+    <holder>JMRI</holder>
+  </copyright>
+
+  <authorgroup xmlns="http://docbook.org/ns/docbook">
+    <author>
+        <personname>
+          <firstname>Jure</firstname>
+          <surname>Kobal</surname>
+        </personname>
+        <email>kobalj@gmail.com</email>
+    </author>
+  </authorgroup>
+
+  <revhistory xmlns="http://docbook.org/ns/docbook">
+    <revision>
+        <revnumber>1</revnumber>
+        <date>2026-10-18</date>
+        <authorinitials>JK</authorinitials>
+        <revremark>Initial version</revremark>
+    </revision>
+  </revhistory>
+
+  <aspecttable>DR-Hl-1959</aspecttable>
+  <name>Full main signal</name>
+  <reference></reference>
+  <description>Main signal with the light-strip box, showing all 17 Hl aspects. Heads: 1 = upper lamp / red (Gelb 1, green, red), 2 = Gelb 2, 3 = light strip (yellow = 60 km/h, green = 100 km/h).</description>
+
+  <appearances>
+    <appearance>
+      <aspectname>Hl1</aspectname>
+      <show>green</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl1.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl1.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl1.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl2</aspectname>
+      <show>green</show>
+      <show>yellow</show>
+      <show>green</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl2.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl2.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl2.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl3a</aspectname>
+      <show>green</show>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl3a.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl3a.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl3a.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl3b</aspectname>
+      <show>green</show>
+      <show>yellow</show>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl3b.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl3b.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl3b.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl4</aspectname>
+      <show>flashgreen</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl4.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl4.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl4.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl4-noflash.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl5</aspectname>
+      <show>flashgreen</show>
+      <show>yellow</show>
+      <show>green</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl5.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl5.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl5.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl5-noflash.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl6a</aspectname>
+      <show>flashgreen</show>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl6a.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl6a.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl6a.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl6a-noflash.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl6b</aspectname>
+      <show>flashgreen</show>
+      <show>yellow</show>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl6b.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl6b.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl6b.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl6b-noflash.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl7</aspectname>
+      <show>flashyellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl7.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl7.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl7.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl7-noflash.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl8</aspectname>
+      <show>flashyellow</show>
+      <show>yellow</show>
+      <show>green</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl8.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl8.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl8.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl8-noflash.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl9a</aspectname>
+      <show>flashyellow</show>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl9a.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl9a.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl9a.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl9a-noflash.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl9b</aspectname>
+      <show>flashyellow</show>
+      <show>yellow</show>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl9b.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl9b.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl9b.gif</imagelink>
+      <imagelink type="noflash">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl9b-noflash.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl10</aspectname>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl10.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl10.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl10.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl11</aspectname>
+      <show>yellow</show>
+      <show>yellow</show>
+      <show>green</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl11.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl11.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl11.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl12a</aspectname>
+      <show>yellow</show>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl12a.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl12a.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl12a.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl12b</aspectname>
+      <show>yellow</show>
+      <show>yellow</show>
+      <show>yellow</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl12b.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl12b.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl12b.gif</imagelink>
+    </appearance>
+    <appearance>
+      <aspectname>Hl13</aspectname>
+      <show>red</show>
+      <imagelink type="prototype">../../../resources/icons/largeschematics/aspects/DR-Hl-1959/main_full/hl13.gif</imagelink>
+      <imagelink type="medium panel">../../../resources/icons/mediumschematics/aspects/DR-Hl-1959/main_full/hl13.gif</imagelink>
+      <imagelink type="small panel">../../../resources/icons/smallschematics/aspects/DR-Hl-1959/main_full/hl13.gif</imagelink>
+    </appearance>
+  </appearances>
+
+  <!-- Start of Specific Appearances list -->
+  <specificappearances>
+    <danger>
+      <aspect>Hl13</aspect>
+    </danger>
+    <held>
+      <aspect>Hl13</aspect>
+    </held>
+  </specificappearances>
+  <!-- End of Specific Appearances list -->
+
+  <!-- Start of Aspect Mapping -->
+  <aspectMappings>
+    <aspectMapping>
+      <advancedAspect>Hl1</advancedAspect>
+      <ourAspect>Hl1</ourAspect>
+      <ourAspect>Hl2</ourAspect>
+      <ourAspect>Hl3b</ourAspect>
+      <ourAspect>Hl3a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl2</advancedAspect>
+      <ourAspect>Hl4</ourAspect>
+      <ourAspect>Hl5</ourAspect>
+      <ourAspect>Hl6b</ourAspect>
+      <ourAspect>Hl6a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl3a</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+      <ourAspect>Hl8</ourAspect>
+      <ourAspect>Hl9b</ourAspect>
+      <ourAspect>Hl9a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl3b</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+      <ourAspect>Hl8</ourAspect>
+      <ourAspect>Hl9b</ourAspect>
+      <ourAspect>Hl9a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl4</advancedAspect>
+      <ourAspect>Hl1</ourAspect>
+      <ourAspect>Hl2</ourAspect>
+      <ourAspect>Hl3b</ourAspect>
+      <ourAspect>Hl3a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl5</advancedAspect>
+      <ourAspect>Hl4</ourAspect>
+      <ourAspect>Hl5</ourAspect>
+      <ourAspect>Hl6b</ourAspect>
+      <ourAspect>Hl6a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl6a</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+      <ourAspect>Hl8</ourAspect>
+      <ourAspect>Hl9b</ourAspect>
+      <ourAspect>Hl9a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl6b</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+      <ourAspect>Hl8</ourAspect>
+      <ourAspect>Hl9b</ourAspect>
+      <ourAspect>Hl9a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl7</advancedAspect>
+      <ourAspect>Hl1</ourAspect>
+      <ourAspect>Hl2</ourAspect>
+      <ourAspect>Hl3b</ourAspect>
+      <ourAspect>Hl3a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl8</advancedAspect>
+      <ourAspect>Hl4</ourAspect>
+      <ourAspect>Hl5</ourAspect>
+      <ourAspect>Hl6b</ourAspect>
+      <ourAspect>Hl6a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl9a</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+      <ourAspect>Hl8</ourAspect>
+      <ourAspect>Hl9b</ourAspect>
+      <ourAspect>Hl9a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl9b</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+      <ourAspect>Hl8</ourAspect>
+      <ourAspect>Hl9b</ourAspect>
+      <ourAspect>Hl9a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl10</advancedAspect>
+      <ourAspect>Hl1</ourAspect>
+      <ourAspect>Hl2</ourAspect>
+      <ourAspect>Hl3b</ourAspect>
+      <ourAspect>Hl3a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl11</advancedAspect>
+      <ourAspect>Hl4</ourAspect>
+      <ourAspect>Hl5</ourAspect>
+      <ourAspect>Hl6b</ourAspect>
+      <ourAspect>Hl6a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl12a</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+      <ourAspect>Hl8</ourAspect>
+      <ourAspect>Hl9b</ourAspect>
+      <ourAspect>Hl9a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl12b</advancedAspect>
+      <ourAspect>Hl7</ourAspect>
+      <ourAspect>Hl8</ourAspect>
+      <ourAspect>Hl9b</ourAspect>
+      <ourAspect>Hl9a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl13</advancedAspect>
+      <ourAspect>Hl10</ourAspect>
+      <ourAspect>Hl11</ourAspect>
+      <ourAspect>Hl12b</ourAspect>
+      <ourAspect>Hl12a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl13+Zs1</advancedAspect>
+      <ourAspect>Hl10</ourAspect>
+      <ourAspect>Hl11</ourAspect>
+      <ourAspect>Hl12b</ourAspect>
+      <ourAspect>Hl12a</ourAspect>
+    </aspectMapping>
+    <aspectMapping>
+      <advancedAspect>Hl13+Ra12</advancedAspect>
+      <ourAspect>Hl10</ourAspect>
+      <ourAspect>Hl11</ourAspect>
+      <ourAspect>Hl12b</ourAspect>
+      <ourAspect>Hl12a</ourAspect>
+    </aspectMapping>
+  </aspectMappings>
+  <!-- End of Aspect Mapping -->
+</appearancetable>

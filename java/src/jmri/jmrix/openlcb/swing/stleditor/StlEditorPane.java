@@ -180,7 +180,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
     private static String SYNTAX_MESSAGE = "Syntax Messages.Syntax Messages.Message 1";
 
     // Regex Patterns
-    private static Pattern PARSE_VARIABLE = Pattern.compile("[IQYZM](\\d+)\\.(\\d+)", Pattern.CASE_INSENSITIVE);
+    private static Pattern PARSE_VARIABLE = Pattern.compile("[IQYZM] ?(\\d+)\\.(\\d+)", Pattern.CASE_INSENSITIVE);  // A space between the letter and n.n is valid
     private static Pattern PARSE_NOVAROPER = Pattern.compile("(A\\(|AN\\(|O\\(|ON\\(|X\\(|XN\\(|\\)|NOT|SET|CLR|SAVE)", Pattern.CASE_INSENSITIVE);
     private static Pattern PARSE_LABEL = Pattern.compile("([a-zA-Z]\\w{0,3}:)");
     private static Pattern PARSE_JUMP = Pattern.compile("(JNBI|JCN|JCB|JNB|JBI|JU|JC)", Pattern.CASE_INSENSITIVE);
@@ -518,6 +518,10 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
 
     // --------------  Initialization ---------
 
+    /**
+     * Initialize the IQYZ tables with default event ids.
+     * When the actual data is loaded, the default event ids will be replaced with real event ids.
+     */
     private void initalizeLists() {
         // Group List
         for (int i = 0; i < 16; i++) {
@@ -526,22 +530,28 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
 
         // Input List
         for (int i = 0; i < 128; i++) {
-            _inputList.add(new InputRow("", "", ""));
+            var eventTrue = createDefaultEventID('I', i);
+            var eventFalse = createDefaultEventID('i', i);
+            _inputList.add(new InputRow("", eventTrue, eventFalse));
         }
 
         // Output List
         for (int i = 0; i < 128; i++) {
-            _outputList.add(new OutputRow("", "", ""));
+            var eventTrue = createDefaultEventID('Q', i);
+            var eventFalse = createDefaultEventID('q', i);
+            _outputList.add(new OutputRow("", eventTrue, eventFalse));
         }
 
         // Receiver List
         for (int i = 0; i < 16; i++) {
-            _receiverList.add(new ReceiverRow("", ""));
+            var event = createDefaultEventID('Y', i);
+            _receiverList.add(new ReceiverRow("", event));
         }
 
         // Transmitter List
         for (int i = 0; i < 16; i++) {
-            _transmitterList.add(new TransmitterRow("", ""));
+            var event = createDefaultEventID('Z', i);
+            _transmitterList.add(new TransmitterRow("", event));
         }
     }
 
@@ -807,7 +817,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
             longLine = longLine + sb.toString();
         }
 
-        log.debug("MultiLine: {}", longLine);
+        log.debug("Encoded multiLine:\n{}", longLine);
 
         if (longLine.length() < 256) {
             groupRow.setMultiLine(longLine);
@@ -927,8 +937,12 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
         _messages.clear();
         _tokenMap = new TreeMap<>();
         var line = group.getMultiLine();
+        if (line.length() == 0) {
+            return;
+        }
 
         // Find label locations
+        log.debug("Find label locations");
         var matchLabel = PARSE_LABEL.matcher(line);
         while (matchLabel.find()) {
             var label = line.substring(matchLabel.start(), matchLabel.end());
@@ -936,6 +950,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
         }
 
         // Find variable locations and operators
+        log.debug("Find variables and operators");
         var matchVar = PARSE_VARIABLE.matcher(line);
         while (matchVar.find()) {
             var variable = line.substring(matchVar.start(), matchVar.end());
@@ -947,6 +962,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
         }
 
         // Find operators without variables
+        log.debug("Find operators without variables");
         var matchOper = PARSE_NOVAROPER.matcher(line);
         while (matchOper.find()) {
             var oper = line.substring(matchOper.start(), matchOper.end());
@@ -963,6 +979,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
         }
 
         // Find jump operators and destinations
+        log.debug("Find jump operators and destinations");
         var matchJump = PARSE_JUMP.matcher(line);
         while (matchJump.find()) {
             var jump = line.substring(matchJump.start(), matchJump.end());
@@ -983,6 +1000,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
         }
 
         // Find timer word locations and load operator
+        log.debug("Find timer word locations and load operators");
         var matchTimerWord = PARSE_TIMERWORD.matcher(line);
         while (matchTimerWord.find()) {
             var timerWord = matchTimerWord.group(1);
@@ -998,6 +1016,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
         }
 
         // Find timer variable locations and S operators
+        log.debug("Find timer variable locations and S operators");
         var matchTimerVar = PARSE_TIMERVAR.matcher(line);
         while (matchTimerVar.find()) {
             var timerVar = matchTimerVar.group(1);
@@ -1009,6 +1028,11 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
         }
 
         // Find comment locations
+        log.debug("Find comment locations");
+
+        // Add a newline to capture a comment at the end of the input line.
+        line = line + "\n";
+
         var matchComment1 = PARSE_COMMENT1.matcher(line);
         while (matchComment1.find()) {
             var comment = matchComment1.group(1).trim();
@@ -1043,16 +1067,13 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
                     Bundle.getMessage("MsgParseErr", group.getName(), msgs),
                     Bundle.getMessage("TitleParseErr"),
                     JmriJOptionPane.ERROR_MESSAGE);
-            _messages.forEach((msg) -> {
-                log.error(msg);
-            });
         }
 
         // Create token debugging output
         if (log.isDebugEnabled()) {
-            log.info("Line = {}", line);
+            log.debug("Decode line:\n{}", line);
             for (Token token : _tokenMap.values()) {
-                log.info("Token = {}", token);
+                log.debug("  Token = {}", token);
             }
         }
     }
@@ -1080,8 +1101,18 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
             limit--;
             index--;
         }
-        _messages.add(Bundle.getMessage("ErrNoOper", index, line));
-        log.error("findOperator: {} :: {}", index, line);
+
+        // Format error message
+        int subStart = index < 0 ? 0 : index;
+        int subEnd = subStart + 20;
+        if (subEnd > line.length()) {
+            subEnd = line.length();
+        }
+        String fragment = line.substring(subStart, subEnd).replace("\n", "~");
+        String msg = Bundle.getMessage("ErrNoOper", index, fragment);
+        _messages.add(msg);
+        log.error(msg);
+
         return null;
     }
 
@@ -1164,6 +1195,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
     }
 
     public class CdiListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
             log.debug("CdiListener event = {}", propertyName);
@@ -1189,6 +1221,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
      * When the updateSimpleNodeIdent event occurs and the compile is in progress it starts the message display process.
      */
     public class RebootListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
             if (_compileInProgress && propertyName.equals("updateSimpleNodeIdent")) {
@@ -1247,6 +1280,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
     }
 
     public class EntryListener implements PropertyChangeListener {
+        @Override
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
             log.debug("EntryListener event = {}", propertyName);
@@ -1789,9 +1823,8 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
 
     /**
      * The event id will be a dotted-hex or an 'event name'.  Event names need to be converted to
-     * the actual dotted-hex value.  If the name no longer exists in the name store, a zeros
-     * event is created as 00.00.00.00.00.AA.BB.CC.  AA will the hex value of one of IQYZ.  BB and
-     * CC are hex values of the group and item numbers.
+     * the actual dotted-hex value.  If the name no longer exists in the name store, a zeros based
+     * default event is used.
      * @param event The dotted-hex event id or event name
      * @param iqyz The character for the table.
      * @param row The row number.
@@ -1810,10 +1843,28 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
             log.error("STL Editor getLoadEventID event failed for event name {}", event);
         }
 
-        // Create zeros event dotted-hex string
+        // Create a default zeros based event
+        var zeroEvent = createDefaultEventID(iqyz, row);
+
+        JmriJOptionPane.showMessageDialog(null,
+                Bundle.getMessage("MessageEvent", event, zeroEvent, iqyz),
+                Bundle.getMessage("TitleEvent"),
+                JmriJOptionPane.ERROR_MESSAGE);
+
+        return zeroEvent;
+    }
+
+    /**
+     * Create a default zeros based event 00.00.00.00.00.AA.BB.CC.  AA will be the hex value of one of IQYZiq.
+     * BB and CC are hex values of the group and item numbers.
+     * @param iqyz The character for the table. The false event uses the lower case I or Q.
+     * @param row The row number.
+     * @return a dotted-hex event id string.
+     */
+    private String createDefaultEventID(char iqyz, int row) {
         var group = row;
         var item = 0;
-        if (iqyz == 'I' || iqyz == 'Q') {
+        if (iqyz == 'I' || iqyz == 'Q' || iqyz == 'i' || iqyz == 'q') {
             group = row / 8;
             item = row % 8;
         }
@@ -1824,14 +1875,7 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
         sb.append(StringUtil.twoHexFromInt(group));
         sb.append(".");
         sb.append(StringUtil.twoHexFromInt(item));
-        var zeroEvent = sb.toString();
-
-        JmriJOptionPane.showMessageDialog(null,
-                Bundle.getMessage("MessageEvent", event, zeroEvent, iqyz),
-                Bundle.getMessage("TitleEvent"),
-                JmriJOptionPane.ERROR_MESSAGE);
-
-        return zeroEvent;
+        return sb.toString();
     }
 
     private void loadBackupInputs(int index, List<String> lines) {
@@ -2183,6 +2227,16 @@ public class StlEditorPane extends jmri.util.swing.JmriPanel
             var logicRow = row.getLogicList();
             for (LogicRow logic : logicRow) {
                 var operName = logic.getOperName();
+
+                // skip empty logic rows since they look like an empty group row
+                if (logic.getLabel().isEmpty() &&
+                        operName.isEmpty() &&
+                        logic.getName().isEmpty() &&
+                        logic.getComment().isEmpty()) {
+                    log.info("skip empty row");
+                    continue;
+                }
+
                 csvFile.printRecord("", logic.getLabel(), operName, logic.getName(), logic.getComment());
             }
         }

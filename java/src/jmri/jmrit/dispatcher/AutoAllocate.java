@@ -150,6 +150,10 @@ public class AutoAllocate implements Runnable {
                         case ABORT:
                             abort = true; //belt an braces
                             break;
+                        case BARRIER:
+                            // every task queued before this one is done
+                            task.getWhenReached().run();
+                            break;
                         default:
                             log.error("Unknown action in TaskAllocateRelease - ignoring");
                     }
@@ -1638,6 +1642,6 @@ public class AutoAllocate implements Runnable {
         return false;
     }
 
-    private final static Logger log = LoggerFactory.getLogger(AutoAllocate.class);
+    private static final Logger log = LoggerFactory.getLogger(AutoAllocate.class);
 
 }

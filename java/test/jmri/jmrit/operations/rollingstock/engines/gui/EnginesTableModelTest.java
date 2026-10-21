@@ -1,8 +1,9 @@
 package jmri.jmrit.operations.rollingstock.engines.gui;
 
-import jmri.jmrit.operations.OperationsTestCase;
 import org.junit.Assert;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
+
+import jmri.jmrit.operations.OperationsTestCase;
 
 /**
  *
@@ -12,10 +13,10 @@ public class EnginesTableModelTest extends OperationsTestCase {
 
     @Test
     public void testCTor() {
-        EnginesTableModel t = new EnginesTableModel();
+        EnginesTableModel t = new EnginesTableModel(true, null, null);
         Assert.assertNotNull("exists",t);
     }
 
-    // private final static Logger log = LoggerFactory.getLogger(EnginesTableModelTest.class);
+    // private static final Logger log = LoggerFactory.getLogger(EnginesTableModelTest.class);
 
 }

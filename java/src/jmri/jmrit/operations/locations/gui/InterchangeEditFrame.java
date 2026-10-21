@@ -2,37 +2,39 @@ package jmri.jmrit.operations.locations.gui;
 
 import javax.swing.BorderFactory;
 
-import jmri.jmrit.operations.locations.*;
-import jmri.jmrit.operations.locations.tools.ChangeTrackTypeAction;
-import jmri.jmrit.operations.locations.tools.TrackDestinationEditAction;
+import jmri.jmrit.operations.locations.Location;
+import jmri.jmrit.operations.locations.Track;
+import jmri.jmrit.operations.locations.tools.*;
 
 /**
- * Frame for user edit of a classification/interchange track. Adds two panels to
- * TrackEditFrame for train/route car drops and pulls.
+ * Frame for user edit of a classification/interchange track.
  *
- * @author Dan Boudreau Copyright (C) 2008, 2011, 2012
+ * @author Dan Boudreau Copyright (C) 2008, 2011, 2012, 2025
  */
 public class InterchangeEditFrame extends TrackEditFrame {
-
-    public InterchangeEditFrame() {
+    
+    public InterchangeEditFrame(Location location) {
         super(Bundle.getMessage("AddInterchange"));
+        initComponents(location, null);
     }
     
-    @Override
-    public void initComponents(Track track) {
-        setTitle(Bundle.getMessage("EditInterchange", track.getLocation().getName()));
+    public InterchangeEditFrame(Track track) {
+        super(Bundle.getMessage("EditInterchange", track.getLocation().getName()));
         initComponents(track.getLocation(), track);
     }
 
     @Override
-    public void initComponents(Location location, Track track) {
+    protected void initComponents(Location location, Track track) {
         _type = Track.INTERCHANGE;
 
         super.initComponents(location, track);
 
-        _toolMenu.insert(new TrackDestinationEditAction(this), 0);
-        _toolMenu.insert(new ChangeTrackTypeAction(this), TOOL_MENU_OFFSET + 1);
+        _toolMenu.insert(new TrackPriorityAction(_track), 0);
+        _toolMenu.insert(new TrackDestinationEditAction(this), 1);
+        _toolMenu.insert(new ChangeTrackTypeAction(this), TOOL_MENU_OFFSET + 2);
         addHelpMenu("package.jmri.jmrit.operations.Operations_Interchange", true); // NOI18N
+        
+        panelQuickService.setVisible(true);
 
         // override text strings for tracks
         // panelTrainDir.setBorder(BorderFactory.createTitledBorder(Bundle.getMessage("TrainInterchange")));
@@ -46,5 +48,5 @@ public class InterchangeEditFrame extends TrackEditFrame {
         setVisible(true);
     }
 
-//    private final static Logger log = LoggerFactory.getLogger(InterchangeEditFrame.class);
+//    private static final Logger log = LoggerFactory.getLogger(InterchangeEditFrame.class);
 }

@@ -1,21 +1,21 @@
 package jmri.jmrit.operations.trains.trainbuilder;
 
+import java.time.LocalDateTime;
+
+import jmri.InstanceManager;
+import jmri.jmrit.operations.OperationsTestCase;
+import jmri.jmrit.operations.locations.*;
+import jmri.jmrit.operations.rollingstock.cars.Car;
+import jmri.jmrit.operations.rollingstock.cars.CarManager;
+
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import jmri.InstanceManager;
-import jmri.jmrit.operations.OperationsTestCase;
-import jmri.jmrit.operations.locations.Location;
-import jmri.jmrit.operations.locations.LocationManager;
-import jmri.jmrit.operations.locations.Track;
-import jmri.jmrit.operations.rollingstock.cars.Car;
-import jmri.jmrit.operations.rollingstock.cars.CarManager;
-
 /**
  * Tests for the TrainBuilderBase class
  *
- * @author Daniel Boudreau Copyright (C) 2021
+ * @author Daniel Boudreau Copyright (C) 2021, 2026
  */
 public class TrainBuilderBaseTest extends OperationsTestCase {
 
@@ -42,8 +42,7 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         interchangeTrack.setLength(1000);
         interchangeTrack.setServiceOrder(Track.NORMAL);
 
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        java.util.Date date = cal.getTime();
+        LocalDateTime date = LocalDateTime.of(1956, 7, 2, 12, 0);
 
         // place 3 cars on the track.
         Car a = cmanager.newRS("ABC", "123");
@@ -52,8 +51,8 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         a.setLastDate(date);
         a.setLocation(A, interchangeTrack);
 
-        cal.add(java.util.Calendar.MINUTE, 2);
-        date = cal.getTime();
+        // add 2 minutes
+        date = LocalDateTime.of(1956, 7, 2, 12, 2);
 
         Car b = cmanager.newRS("ABC", "321");
         b.setTypeName(carTypes[1]);
@@ -61,8 +60,8 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         b.setLastDate(date);
         b.setLocation(A, interchangeTrack);
 
-        cal.add(java.util.Calendar.MINUTE, 2);
-        date = cal.getTime();
+        // add 2 more minutes
+        date = LocalDateTime.of(1956, 7, 2, 12, 4);
 
         Car c = cmanager.newRS("ABC", "111");
         c.setTypeName(carTypes[1]);
@@ -71,18 +70,18 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         c.setLocation(A, interchangeTrack);
 
         // and set the car list up.
-        tbb._carList = new java.util.ArrayList<>();
-        tbb._carList.add(a);
-        tbb._carList.add(b);
-        tbb._carList.add(c);
+        tbb.setCarList(new java.util.ArrayList<>());
+        tbb.getCarList().add(a);
+        tbb.getCarList().add(b);
+        tbb.getCarList().add(c);
 
         try {
             // with Track.NORMAL order, the car you ask for is the
             // car you get.
             sortCarsOnFifoLifoTracks.invoke(tbb);
-            Assert.assertEquals("NORMAL Order, 123 first", a, tbb._carList.get(0));
-            Assert.assertEquals("NORMAL Order, 321 second", b, tbb._carList.get(1));
-            Assert.assertEquals("NORMAL Order, 111 last", c, tbb._carList.get(2));
+            Assert.assertEquals("NORMAL Order, 123 first", a, tbb.getCarList().get(0));
+            Assert.assertEquals("NORMAL Order, 321 second", b, tbb.getCarList().get(1));
+            Assert.assertEquals("NORMAL Order, 111 last", c, tbb.getCarList().get(2));
         } catch (java.lang.IllegalAccessException iae) {
             Assert.fail("Could not access method getCarOrder in TrackBuilder class");
         } catch (java.lang.reflect.InvocationTargetException ite) {
@@ -100,8 +99,7 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         interchangeTrack.setLength(1000);
         interchangeTrack.setServiceOrder(Track.FIFO);
 
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        java.util.Date date = cal.getTime();
+        LocalDateTime date = LocalDateTime.of(1956, 7, 2, 12, 0);
 
         // and placing 3 cars on the track.
         Car a = cmanager.newRS("ABC", "123");
@@ -110,8 +108,8 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         a.setLastDate(date);
         a.setLocation(A, interchangeTrack);
 
-        cal.add(java.util.Calendar.MINUTE, 2);
-        date = cal.getTime();
+        // add 2 minutes
+        date = LocalDateTime.of(1956, 7, 2, 12, 2);
 
         Car b = cmanager.newRS("ABC", "321");
         b.setTypeName(carTypes[1]);
@@ -119,8 +117,8 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         b.setLastDate(date);
         b.setLocation(A, interchangeTrack);
 
-        cal.add(java.util.Calendar.MINUTE, 2);
-        date = cal.getTime();
+        // add 2 more minutes
+        date = LocalDateTime.of(1956, 7, 2, 12, 4);
 
         Car c = cmanager.newRS("ABC", "111");
         c.setTypeName(carTypes[1]);
@@ -129,17 +127,17 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         c.setLocation(A, interchangeTrack);
 
         // and set the car list up.
-        tbb._carList = new java.util.ArrayList<>();
-        tbb._carList.add(c);
-        tbb._carList.add(a);
-        tbb._carList.add(b);
+        tbb.setCarList(new java.util.ArrayList<>());
+        tbb.getCarList().add(c);
+        tbb.getCarList().add(a);
+        tbb.getCarList().add(b);
 
         try {
             // FIFO
             sortCarsOnFifoLifoTracks.invoke(tbb);
-            Assert.assertEquals("FIFO Order, 123 first", a, tbb._carList.get(0));
-            Assert.assertEquals("FIFO Order, 321 second", b, tbb._carList.get(1));
-            Assert.assertEquals("FIFO Order, 111 last", c, tbb._carList.get(2));
+            Assert.assertEquals("FIFO Order, 123 first", a, tbb.getCarList().get(0));
+            Assert.assertEquals("FIFO Order, 321 second", b, tbb.getCarList().get(1));
+            Assert.assertEquals("FIFO Order, 111 last", c, tbb.getCarList().get(2));
         } catch (java.lang.IllegalAccessException iae) {
             Assert.fail("Could not access method getCarOrder in TrackBuilder class");
         } catch (java.lang.reflect.InvocationTargetException ite) {
@@ -157,8 +155,7 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         interchangeTrack.setLength(1000);
         interchangeTrack.setServiceOrder(Track.LIFO);
 
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        java.util.Date date = cal.getTime();
+        LocalDateTime date = LocalDateTime.of(1956, 7, 2, 12, 0);
 
         // and placing 3 cars on the track.
         Car a = cmanager.newRS("ABC", "123");
@@ -167,8 +164,8 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         a.setLastDate(date);
         a.setLocation(A, interchangeTrack);
 
-        cal.add(java.util.Calendar.MINUTE, 2);
-        date = cal.getTime();
+        // add 2 minutes
+        date = LocalDateTime.of(1956, 7, 2, 12, 2);
 
         Car b = cmanager.newRS("ABC", "321");
         b.setTypeName(carTypes[1]);
@@ -176,8 +173,9 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         b.setLastDate(date);
         b.setLocation(A, interchangeTrack);
 
-        cal.add(java.util.Calendar.MINUTE, 2);
-        date = cal.getTime();
+
+        // add 2 more minutes
+        date = LocalDateTime.of(1956, 7, 2, 12, 4);
 
         Car c = cmanager.newRS("ABC", "111");
         c.setTypeName(carTypes[1]);
@@ -186,17 +184,17 @@ public class TrainBuilderBaseTest extends OperationsTestCase {
         c.setLocation(A, interchangeTrack);
 
         // and set the car list up.
-        tbb._carList = new java.util.ArrayList<>();
-        tbb._carList.add(c);
-        tbb._carList.add(a);
-        tbb._carList.add(b);
+        tbb.setCarList(new java.util.ArrayList<>());
+        tbb.getCarList().add(c);
+        tbb.getCarList().add(a);
+        tbb.getCarList().add(b);
 
         try {
             // LIFO
             sortCarsOnFifoLifoTracks.invoke(tbb);
-            Assert.assertEquals("LIFO Order, 123 first", c, tbb._carList.get(0));
-            Assert.assertEquals("LIFO Order, 321 second", b, tbb._carList.get(1));
-            Assert.assertEquals("LIFO Order, 111 last", a, tbb._carList.get(2));
+            Assert.assertEquals("LIFO Order, 123 first", c, tbb.getCarList().get(0));
+            Assert.assertEquals("LIFO Order, 321 second", b, tbb.getCarList().get(1));
+            Assert.assertEquals("LIFO Order, 111 last", a, tbb.getCarList().get(2));
         } catch (java.lang.IllegalAccessException iae) {
             Assert.fail("Could not access method getCarOrder in TrackBuilder class");
         } catch (java.lang.reflect.InvocationTargetException ite) {

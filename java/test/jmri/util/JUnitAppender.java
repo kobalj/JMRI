@@ -2,25 +2,19 @@ package jmri.util;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.Filter;
-import org.apache.logging.log4j.core.Layout;
-import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.*;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.appender.AppenderLoggingException;
+import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.core.config.plugins.*;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.apache.logging.log4j.core.config.Property;
-
 import org.junit.jupiter.api.Assertions;
 
 /**
@@ -49,7 +43,7 @@ import org.junit.jupiter.api.Assertions;
 @Plugin(name="JUnitAppender", category="Core", elementType="appender", printObject=true)
 public class JUnitAppender extends AbstractAppender {
 
-    protected JUnitAppender(final String name, final Filter filter, final Layout<? extends Serializable> layout, 
+    protected JUnitAppender(final String name, final Filter filter, final Layout<? extends Serializable> layout,
             final boolean ignoreExceptions, final Property[] properties) {
         super(name, filter, layout, ignoreExceptions, properties );
         activateInstance();
@@ -355,6 +349,7 @@ public class JUnitAppender extends AbstractAppender {
      * @return count of skipped messages of WARN or more specific level
      * @see #clearBacklog(Level)
      */
+    @SuppressWarnings("javadoc")
     public static int clearBacklog() {
         return clearBacklog(Level.WARN);
     }
@@ -610,6 +605,28 @@ public class JUnitAppender extends AbstractAppender {
      */
     public static void suppressWarnMessageStartsWith(String msg) {
         suppressMessageStartsWith(Level.WARN, msg);
+    }
+
+    /**
+     * If there's a next matching message of Info severity, just ignore it.
+     * Not an error if not present; mismatch is an error.
+     * White space is ignored.
+     *
+     * @param msg the message to suppress
+     */
+    public static void suppressInfoMessage(String msg) {
+        suppressMessage(Level.INFO, msg);
+    }
+
+    /**
+     * If there's a next matching message of Info severity, just ignore it.
+     * Not an error if not present; mismatch is an error.
+     * White space is ignored.
+     * Removes messages of lower or equal severity while looking for a matching one.
+     * @param msg text at start of the message to suppress
+     */
+    public static void suppressInfoMessageStartsWith(String msg) {
+        suppressMessageStartsWith(Level.INFO, msg);
     }
 
     /**

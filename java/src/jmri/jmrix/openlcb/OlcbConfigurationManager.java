@@ -150,6 +150,8 @@ public class OlcbConfigurationManager extends jmri.jmrix.can.ConfigurationManage
         InstanceManager.setTurnoutManager(
                 getTurnoutManager());
 
+        InstanceManager.store(getPowerManager(), jmri.PowerManager.class);
+
         InstanceManager.setStringIOManager(
                 getStringIOManager());
 
@@ -247,6 +249,9 @@ public class OlcbConfigurationManager extends jmri.jmrix.can.ConfigurationManage
         if (type.equals(jmri.TurnoutManager.class)) {
             return true;
         }
+        if (type.equals(jmri.PowerManager.class)) {
+            return true;
+        }
         if (type.equals(jmri.ReporterManager.class)) {
             return true;
         }
@@ -318,6 +323,9 @@ public class OlcbConfigurationManager extends jmri.jmrix.can.ConfigurationManage
         }
         if (T.equals(jmri.TurnoutManager.class)) {
             return (T) getTurnoutManager();
+        }
+        if (T.equals(jmri.PowerManager.class)) {
+            return (T) getPowerManager();
         }
         if (T.equals(jmri.LightManager.class)) {
             return (T) getLightManager();
@@ -413,6 +421,18 @@ public class OlcbConfigurationManager extends jmri.jmrix.can.ConfigurationManage
             turnoutManager = new OlcbTurnoutManager(adapterMemo);
         }
         return turnoutManager;
+    }
+
+    protected OlcbPowerManager powerManager;
+
+    public OlcbPowerManager getPowerManager() {
+        if (adapterMemo.getDisabled()) {
+            return null;
+        }
+        if (powerManager == null) {
+            powerManager = new OlcbPowerManager(adapterMemo);
+        }
+        return powerManager;
     }
 
     protected OlcbSensorManager sensorManager;
@@ -608,7 +628,7 @@ public class OlcbConfigurationManager extends jmri.jmrix.can.ConfigurationManage
                 return;
             }
     
-            long pid = getProcessId(1);
+            long pid = getProcessId();
             log.trace("Process ID: {}", pid);
     
             // get first network interface internet address
@@ -655,25 +675,15 @@ public class OlcbConfigurationManager extends jmri.jmrix.can.ConfigurationManage
 
     private static final Random RANDOM = new Random();
     
-    protected long getProcessId(final long fallback) {
-        // Note: may fail in some JVM implementations
-        // therefore fallback has to be provided
-
-        // something like '<pid>@<hostname>', at least in SUN / Oracle JVMs
-        final String jvmName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
-        final int index = jvmName.indexOf('@');
-
-        if (index < 1) {
-            // part before '@' empty (index = 0) / '@' not found (index = -1)
-            return fallback;
-        }
-
+    protected long getProcessId() {
         try {
-            return Long.parseLong(jvmName.substring(0, index));
-        } catch (NumberFormatException e) {
-            // ignore
+            // using Java 9's ProcessHandle, this is much simpler and more reliable
+            // than the previous approach of parsing the RuntimeMXBean
+            return ProcessHandle.current().pid();
+        } catch (UnsupportedOperationException e) {
+            // use a random value
+            return RANDOM.nextInt();
         }
-        return fallback;
     }
 
     public static CanInterface createOlcbCanInterface(NodeID nodeID, TrafficController tc) {
@@ -749,5 +759,5 @@ public class OlcbConfigurationManager extends jmri.jmrix.can.ConfigurationManage
         }
     }
 
-    private final static Logger log = LoggerFactory.getLogger(OlcbConfigurationManager.class);
+    private static final Logger log = LoggerFactory.getLogger(OlcbConfigurationManager.class);
 }

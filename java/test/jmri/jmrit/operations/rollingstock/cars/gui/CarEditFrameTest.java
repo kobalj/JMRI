@@ -2,19 +2,20 @@ package jmri.jmrit.operations.rollingstock.cars.gui;
 
 import java.text.MessageFormat;
 
-import org.junit.Assert;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
-
 import jmri.InstanceManager;
 import jmri.jmrit.operations.OperationsTestCase;
 import jmri.jmrit.operations.locations.*;
-import jmri.jmrit.operations.rollingstock.cars.*;import jmri.jmrit.operations.rollingstock.cars.tools.CarAttributeEditFrame;
+import jmri.jmrit.operations.rollingstock.cars.*;
+import jmri.jmrit.operations.rollingstock.cars.tools.CarAttributeEditFrame;
 import jmri.jmrit.operations.setup.Control;
 import jmri.jmrit.operations.setup.Setup;
 import jmri.util.*;
 import jmri.util.swing.JemmyUtil;
+
+import org.junit.Assert;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 /**
  * Tests for the Operations Cars GUI class
@@ -409,7 +410,7 @@ public class CarEditFrameTest extends OperationsTestCase {
         Assert.assertNotNull("Car create", c6);
         Assert.assertEquals("car type", Bundle.getMessage("Caboose"), c6.getTypeName());
         Assert.assertEquals("car length", "38", c6.getLength());
-        Assert.assertEquals("car color", "Black", c6.getColor());
+        Assert.assertEquals("car color", "Black", c6.getColorName());
         Assert.assertEquals("car load", "L", c6.getLoadName());
         Assert.assertEquals("car built", "1999", c6.getBuilt());
         Assert.assertEquals("car owner", "DAB", c6.getOwnerName());
@@ -511,7 +512,10 @@ public class CarEditFrameTest extends OperationsTestCase {
 
         // change road number for this car
         f.roadNumberTextField.setText("54321");
-        JemmyUtil.enterClickAndLeave(f.saveButton);
+        JemmyUtil.enterClickAndLeaveThreadSafe(f.saveButton);
+        JemmyUtil.pressDialogButton(f,
+                Bundle.getMessage("rsChangeNumberRoad"),
+                Bundle.getMessage("ButtonYes"));
         car = cManager.getByRoadAndNumber("CP", "54321");
         Assert.assertNotNull("car exists", car);
         // confirm car id was modified
@@ -522,7 +526,10 @@ public class CarEditFrameTest extends OperationsTestCase {
 
         // change road name
         f.roadComboBox.setSelectedItem("SP");
-        JemmyUtil.enterClickAndLeave(f.saveButton);
+        JemmyUtil.enterClickAndLeaveThreadSafe(f.saveButton);
+        JemmyUtil.pressDialogButton(f,
+                Bundle.getMessage("rsChangeNumberRoad"),
+                Bundle.getMessage("ButtonYes"));
         car = cManager.getByRoadAndNumber("SP", "54321");
         Assert.assertNotNull("car exists", car);
         // confirm car id was modified
@@ -1212,13 +1219,13 @@ public class CarEditFrameTest extends OperationsTestCase {
         CarManager cManager = InstanceManager.getDefault(CarManager.class);
 
         Car c1 = cManager.getByRoadAndNumber("CP", "777");
-        c1.setColor("TEST_COLOR");
+        c1.setColorName("TEST_COLOR");
 
         CarEditFrame f = new CarEditFrame();
         f.initComponents();
         
         Thread t1 = new Thread(() -> {
-            JemmyUtil.pressDialogButton(f, Bundle.getMessage("carAddColor"), Bundle.getMessage("ButtonNo"));
+            JemmyUtil.pressDialogButton(f, Bundle.getMessage("addColor"), Bundle.getMessage("ButtonNo"));
         });
         t1.setName("click testAddNewCarColorNo Thread");
         t1.start();
@@ -1243,13 +1250,13 @@ public class CarEditFrameTest extends OperationsTestCase {
         CarManager cManager = InstanceManager.getDefault(CarManager.class);
 
         Car c1 = cManager.getByRoadAndNumber("CP", "777");
-        c1.setColor("TEST_COLOR");
+        c1.setColorName("TEST_COLOR");
 
         CarEditFrame f = new CarEditFrame();
         f.initComponents();
         
         Thread t1 = new Thread(() -> {
-            JemmyUtil.pressDialogButton(f, Bundle.getMessage("carAddColor"), Bundle.getMessage("ButtonYes"));
+            JemmyUtil.pressDialogButton(f, Bundle.getMessage("addColor"), Bundle.getMessage("ButtonYes"));
         });
         t1.setName("click testAddNewCarColorYes Thread");
         t1.start();
@@ -1324,8 +1331,12 @@ public class CarEditFrameTest extends OperationsTestCase {
         JUnitUtil.waitFor(() -> {
             return !t1.isAlive();
         }, "Click Yes Button in dialogue didn't happen");
-
-        Assert.assertTrue(InstanceManager.getDefault(CarLoads.class).containsName(c1.getTypeName(), "TEST_LOAD"));
+        
+        // confirm change edit car loads window appears
+        JmriJFrame lef = JmriJFrame.getFrame("Edit Car Loads");
+        Assert.assertNotNull(lef);
+        
+        JUnitUtil.dispose(lef);
         JUnitUtil.dispose(f);
     }
 }

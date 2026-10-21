@@ -291,15 +291,24 @@ public class DefaultShutDownManager extends Bean implements ShutDownManager {
                 return;
             }
 
+            // When a store is requested, the Cancel option will cancel the shutdown.
+            if (jmri.configurexml.StoreAndCompare.requestStoreIfNeeded()) {
+                log.debug("User cancelled the store request which also cancels the shutdown");
+                setShuttingDown(false);
+                return;
+            }
+
             closeFrames(start);
 
             // wait for parallel tasks to complete
             runShutDownTasks(new HashSet<>(earlyRunnables), "JMRI ShutDown - Early Tasks");
 
-            jmri.configurexml.StoreAndCompare.requestStoreIfNeeded();
-
             // wait for parallel tasks to complete
             runShutDownTasks(runnables, "JMRI ShutDown - Main Tasks");
+
+            // We must wait for the GUI thread before we continue. If we don't,
+            // the user-interface.xml might end up with being empty.
+            ThreadingUtil.runOnGUI(() -> {});
 
             // success
             log.debug("Shutdown took {} milliseconds.", System.currentTimeMillis() - start);

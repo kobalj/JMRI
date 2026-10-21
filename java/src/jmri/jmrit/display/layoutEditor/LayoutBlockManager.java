@@ -155,6 +155,7 @@ public class LayoutBlockManager extends AbstractManager<LayoutBlock> implements 
      * @param block the block to remove.
      */
     public void deleteLayoutBlock(LayoutBlock block) {
+        layoutBlockByBlock.values().remove(block);
         deregister(block);
     }
 
@@ -177,13 +178,29 @@ public class LayoutBlockManager extends AbstractManager<LayoutBlock> implements 
         return getBySystemName(name);
     }
 
+    // LayoutBlock found for each Block, checked on every use as either may change
+    private final java.util.Map<Block, LayoutBlock> layoutBlockByBlock = new java.util.concurrent.ConcurrentHashMap<>();
+
     @CheckReturnValue
     @CheckForNull
     public LayoutBlock getLayoutBlock(@CheckForNull Block block) {
+        if (block != null) {
+            LayoutBlock found = layoutBlockByBlock.get(block);
+            if ((found != null) && (found.getBlock() == block)
+                    && (getBySystemName(found.getSystemName()) == found)) {
+                return found;
+            }
+        }
         for (LayoutBlock lb : getNamedBeanSet()) {
             if (lb.getBlock() == block) {
+                if (block != null) {
+                    layoutBlockByBlock.put(block, lb);
+                }
                 return lb;
             }
+        }
+        if (block != null) {
+            layoutBlockByBlock.remove(block);
         }
         return null;
     }
@@ -234,6 +251,8 @@ public class LayoutBlockManager extends AbstractManager<LayoutBlock> implements 
     public void initializeLayoutBlockPaths() {
         log.debug("start initializeLayoutBlockPaths");
 
+        log.debug("start initializeLayoutBlockPaths getNamedBeanSet {}", getNamedBeanSet());
+
         // cycle through all LayoutBlocks, completing initialization of associated jmri.Blocks
         for (LayoutBlock b : getNamedBeanSet()) {
             log.debug("Calling block '{}({})'.initializeLayoutBlock()", b.getSystemName(), b.getDisplayName());
@@ -262,6 +281,10 @@ public class LayoutBlockManager extends AbstractManager<LayoutBlock> implements 
             log.error("JDOM Exception when retreiving block values", jde);
         } catch (java.io.IOException ioe) {
             log.error("I/O Exception when retreiving block values", ioe);
+        } catch (RuntimeException re) {
+            // restoring the saved block values is not worth losing the routing
+            // initialization below, which would otherwise be skipped silently
+            log.error("Exception when retreiving block values", re);
         }
 
         //special tests for getFacingSignalHead method - comment out next three lines unless using LayoutEditorTests
@@ -1495,6 +1518,72 @@ public class LayoutBlockManager extends AbstractManager<LayoutBlock> implements 
             return null;
         }
 
+        // ----- Begin Turntable Boundary Check -----
+        for (LayoutEditor ed : InstanceManager.getDefault(EditorManager.class).getAll(LayoutEditor.class)) {
+            for (LayoutTurntable turntable : ed.getLayoutTurntables()) {
+                LayoutBlock turntableBlock = turntable.getLayoutBlock();
+                if (turntableBlock == null) continue;
+
+                // Check if one of the blocks is the turntable's block
+                if (turntableBlock.getBlock() == facingBlock || turntableBlock.getBlock() == protectedBlock) {
+                    Block otherBlock = (turntableBlock.getBlock() == facingBlock) ? protectedBlock : facingBlock;
+
+                    for (LayoutTurntable.RayTrack ray : turntable.getRayTrackList()) {
+                        TrackSegment connectedTrack = ray.getConnect();
+                        if (connectedTrack != null && connectedTrack.getLayoutBlock() != null && connectedTrack.getLayoutBlock().getBlock() == otherBlock) {
+                            // We found the correct ray. Now find the mast based on direction.
+                            if (turntableBlock.getBlock() == protectedBlock) {
+                                // Path 2: Moving from Ray block INTO Turntable. The facing mast is the Approach Mast.
+                                if (T.equals(SignalMast.class)) {
+                                    return ray.getApproachMast();
+                                }
+                            } else { // turntableBlock.getBlock() == facingBlock
+                                // Path 1: Moving FROM Turntable out to Ray block. The facing mast is the exit mast for that ray.
+                                if (T.equals(SignalMast.class)) {
+                                    SignalMast exitMast = turntable.getExitSignalMast();
+                                    // This is the mast protecting the path from the turntable to the ray.
+                                    return exitMast;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // ----- Begin Traverser Boundary Check -----
+        for (LayoutEditor ed : InstanceManager.getDefault(EditorManager.class).getAll(LayoutEditor.class)) {
+            for (LayoutTraverser traverser : ed.getLayoutTraversers()) {
+                LayoutBlock traverserBlock = traverser.getLayoutBlock();
+                if (traverserBlock == null) continue;
+
+                // Check if one of the blocks is the traverser's block
+                if (traverserBlock.getBlock() == facingBlock || traverserBlock.getBlock() == protectedBlock) {
+                    Block otherBlock = (traverserBlock.getBlock() == facingBlock) ? protectedBlock : facingBlock;
+
+                    for (LayoutTraverser.SlotTrack slot : traverser.getSlotList()) {
+                        TrackSegment connectedTrack = slot.getConnect();
+                        if (connectedTrack != null && connectedTrack.getLayoutBlock() != null && connectedTrack.getLayoutBlock().getBlock() == otherBlock) {
+                            // We found the correct slot. Now find the mast based on direction.
+                            if (traverserBlock.getBlock() == protectedBlock) {
+                                // Path 2: Moving from Slot block INTO Traverser. The facing mast is the Approach Mast.
+                                if (T.equals(SignalMast.class)) {
+                                    return slot.getApproachMast();
+                                }
+                            } else { // traverserBlock.getBlock() == facingBlock
+                                // Path 1: Moving FROM Traverser out to Slot block. The facing mast is the exit mast for that slot.
+                                if (T.equals(SignalMast.class)) {
+                                    SignalMast exitMast = traverser.getExitSignalMast();
+                                    // This is the mast protecting the path from the traverser to the slot.
+                                    return exitMast;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // ----- End Traverser Boundary Check -----
+
         if (!T.equals(SignalMast.class) && !T.equals(Sensor.class)) {
             log.error("Incorrect class type called, must be either SignalMast or Sensor");
 
@@ -1929,6 +2018,48 @@ public class LayoutBlockManager extends AbstractManager<LayoutBlock> implements 
             @Nonnull LayoutEditor panel) {
         List<LayoutBlock> protectingBlocks = new ArrayList<>();
 
+        // Check for turntable approach masts first, as they are a special case. Ignore NX sensor beans.
+        for (LayoutTurntable turntable : panel.getLayoutTurntables()) {
+            if (bean instanceof SignalMast && turntable.isApproachMast((SignalMast) bean)) {
+                if (turntable.getLayoutBlock() != null) {
+                    protectingBlocks.add(turntable.getLayoutBlock());
+                    return protectingBlocks;
+                }
+            }
+            if (bean.equals(turntable.getExitSignalMast())) {
+                for (LayoutTurntable.RayTrack ray : turntable.getRayTrackList()) {
+                    TrackSegment connectedTrack = ray.getConnect();
+                    if (connectedTrack != null && connectedTrack.getLayoutBlock() != null) {
+                        if (!protectingBlocks.contains(connectedTrack.getLayoutBlock())) {
+                            protectingBlocks.add(connectedTrack.getLayoutBlock());
+                        }
+                    }
+                }
+                return protectingBlocks;
+            }
+        }
+
+        // Check for traverser approach masts first, as they are a special case. Ignore NX sensor beans.
+        for (LayoutTraverser traverser : panel.getLayoutTraversers()) {
+            if (bean instanceof SignalMast && traverser.isApproachMast((SignalMast) bean)) {
+                if (traverser.getLayoutBlock() != null) {
+                    protectingBlocks.add(traverser.getLayoutBlock());
+                    return protectingBlocks;
+                }
+            }
+            if (bean.equals(traverser.getExitSignalMast())) {
+                for (int i=0; i < traverser.getNumberSlots(); i++) {
+                    TrackSegment connectedTrack = traverser.getSlotConnectOrdered(i);
+                    if (connectedTrack != null && connectedTrack.getLayoutBlock() != null) {
+                        if (!protectingBlocks.contains(connectedTrack.getLayoutBlock())) {
+                            protectingBlocks.add(connectedTrack.getLayoutBlock());
+                        }
+                    }
+                }
+                return protectingBlocks;
+            }
+        }
+
         if (!(bean instanceof SignalMast) && !(bean instanceof Sensor)) {
             log.error("Incorrect class type called, must be either SignalMast or Sensor");
 
@@ -2213,6 +2344,45 @@ public class LayoutBlockManager extends AbstractManager<LayoutBlock> implements 
     private LayoutBlock getFacingBlockByBeanByPanel(
             @Nonnull NamedBean bean,
             @Nonnull LayoutEditor panel) {
+        // Check for turntable masts first, as they are a special case. Ignore NX sensor beans.
+        for (LayoutTurntable turntable : panel.getLayoutTurntables()) {
+            if (bean.equals(turntable.getBufferMast())) {
+                return turntable.getLayoutBlock();
+            }
+            if (bean.equals(turntable.getExitSignalMast())) {
+                return turntable.getLayoutBlock();
+            }
+            if (bean instanceof SignalMast && turntable.isApproachMast((SignalMast) bean)) {
+                for (LayoutTurntable.RayTrack ray : turntable.getRayTrackList()) {
+                    if (bean.equals(ray.getApproachMast())) {
+                        TrackSegment connectedTrack = ray.getConnect();
+                        if (connectedTrack != null && connectedTrack.getLayoutBlock() != null) {
+                            return connectedTrack.getLayoutBlock();
+                        }
+                    }
+                }
+            }
+        }
+        // Check for traverser masts, as they are a special case. Ignore NX sensor beans.
+        for (LayoutTraverser traverser : panel.getLayoutTraversers()) {
+            if (bean.equals(traverser.getBufferMast())) {
+                return traverser.getLayoutBlock();
+            }
+            if (bean.equals(traverser.getExitSignalMast())) {
+                return traverser.getLayoutBlock();
+            }
+            if (bean instanceof SignalMast && traverser.isApproachMast((SignalMast) bean)) {
+                for (LayoutTraverser.SlotTrack slot : traverser.getSlotList()) {
+                    if (bean.equals(slot.getApproachMast())) {
+                        TrackSegment connectedTrack = slot.getConnect();
+                        if (connectedTrack != null && connectedTrack.getLayoutBlock() != null) {
+                            return connectedTrack.getLayoutBlock();
+                        }
+                    }
+                }
+            }
+        }
+
         PositionablePoint pp = panel.getFinder().findPositionablePointByEastBoundBean(bean);
         TrackSegment tr;
         boolean east = true;
@@ -2545,7 +2715,7 @@ public class LayoutBlockManager extends AbstractManager<LayoutBlock> implements 
     private boolean checking = false;
     boolean stabilised = false;
 
-    private void setRoutingStabilised() {
+    public void setRoutingStabilised() {
         if (checking) {
             return;
         }

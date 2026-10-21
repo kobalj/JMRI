@@ -18,6 +18,8 @@ import jmri.jmrit.display.layoutEditor.LayoutEditor;
 import jmri.jmrit.display.layoutEditor.LayoutSlip;
 import jmri.jmrit.display.layoutEditor.LayoutTrackExpectedState;
 import jmri.jmrit.display.layoutEditor.LayoutTurnout;
+import jmri.jmrit.display.layoutEditor.LayoutTraverser;
+import jmri.jmrit.display.layoutEditor.LayoutTurntable;
 import jmri.jmrit.display.layoutEditor.LevelXing;
 import jmri.util.ThreadingUtil;
 
@@ -1039,8 +1041,11 @@ public class DefaultSignalMastLogic extends AbstractNamedBean implements SignalM
         log.debug("SignalMastLogicManager started (delay)");
         ThreadingUtil.runOnLayoutDelayed(
                 () -> {
-                    setMastAppearance();
-                    inWait = false;
+                    try {
+                        setMastAppearance();
+                    } finally {
+                        inWait = false;
+                    }
                 },
                 tempDelay
         );
@@ -1052,21 +1057,27 @@ public class DefaultSignalMastLogic extends AbstractNamedBean implements SignalM
      */
     void setMastAppearance() {
         log.debug("Set source Signal Mast Aspect");
+        if (disposing) {
+            // a delayed check can still run after the logic has been disposed
+            return;
+        }
         if (getSourceMast().getHeld()) {
             log.debug("Signal is at a Held state so will set to the aspect defined for Held or Danger");
 
             String heldAspect = getSourceMast().getAppearanceMap().getSpecificAppearance(SignalAppearanceMap.HELD);
-            if (heldAspect != null) {
+            if (heldAspect != null && !getSourceMast().isAspectDisabled(heldAspect)) {
                 log.debug("  Setting to HELD value of {}", heldAspect);
-                ThreadingUtil.runOnLayout(() -> {
-                    getSourceMast().setAspect(heldAspect);
-                });
             } else {
-                String dangerAspect = getSourceMast().getAppearanceMap().getSpecificAppearance(SignalAppearanceMap.DANGER);
-                log.debug("  Setting to DANGER value of {}", dangerAspect);
+                heldAspect = getSourceMast().getAppearanceMap().getSpecificAppearance(SignalAppearanceMap.DANGER);
+                log.debug("  Setting to DANGER value of {}", heldAspect);
+            }
+            String aspectSet = heldAspect; // for lambda
+            try {
                 ThreadingUtil.runOnLayout(() -> {
-                    getSourceMast().setAspect(dangerAspect);
+                    getSourceMast().setAspect(aspectSet);
                 });
+            } catch (RuntimeException ex) {
+                log.error("Could not set held aspect {} on {}", aspectSet, getSourceMast().getDisplayName(), ex);
             }
             return;
         }
@@ -2044,7 +2055,7 @@ public class DefaultSignalMastLogic extends AbstractNamedBean implements SignalM
             /*This check is purely for use with the dispatcher, it will check to see if any of the blocks are set to "useExtraColor"
              which is a means to determine if the block is in a section that is occupied and it not ours thus we can set the signal to danger.*/
             if (state && getAssociatedSection() != null
-                    && InstanceManager.getNullableDefault(jmri.jmrit.dispatcher.DispatcherFrame.class) != null
+                    && InstanceManager.isInitialized(jmri.jmrit.dispatcher.DispatcherFrame.class)
                     && InstanceManager.getNullableDefault(LayoutBlockManager.class) != null
                     && getAssociatedSection().getState() != Section.FORWARD) {
 
@@ -2091,131 +2102,63 @@ public class DefaultSignalMastLogic extends AbstractNamedBean implements SignalM
             active = false;
             turnoutThrown = false;
             permissiveBlock = false;
-            boolean routeclear = true;
             if ((useLayoutEditor) && (autoTurnouts.isEmpty()) && (autoBlocks.isEmpty()) && (autoMasts.isEmpty())) {
                 return;
             }
 
             calculateSpeed();
 
+            // Each listener is removed before it is added, so that initialising
+            // again (e.g. after one list has been changed) does not add it twice.
             Enumeration<Turnout> keys = autoTurnouts.keys();
             while (keys.hasMoreElements()) {
                 Turnout key = keys.nextElement();
+                key.removePropertyChangeListener(propertyTurnoutListener);
                 key.addPropertyChangeListener(propertyTurnoutListener);
-
-                if (key.getKnownState() != autoTurnouts.get(key)) {
-                    if (key.getState() != autoTurnouts.get(key)) {
-                        if (isTurnoutIncluded(key)) {
-                            if (key.getState() != getTurnoutState(key)) {
-                                routeclear = false;
-                            } else if (key.getState() == Turnout.THROWN) {
-                                turnoutThrown = true;
-                            }
-                        } else {
-                            routeclear = false;
-                        }
-                    }
-                } else if (key.getState() == Turnout.THROWN) {
-                    turnoutThrown = true;
-                }
             }
 
             for (NamedBeanSetting nbh : userSetTurnouts) {
                 Turnout key = (Turnout) nbh.getBean();
+                key.removePropertyChangeListener(propertyTurnoutListener);
                 key.addPropertyChangeListener(propertyTurnoutListener, nbh.getBeanName(),
                     "Signal Mast Logic:" + source.getDisplayName() + " to " + destinationSignalMast.getDisplayName());
-                if (key.getKnownState() != nbh.getSetting()) {
-                    routeclear = false;
-                } else if (key.getState() == Turnout.THROWN) {
-                    turnoutThrown = true;
-                }
             }
 
             Enumeration<SignalMast> mastKeys = autoMasts.keys();
             while (mastKeys.hasMoreElements()) {
                 SignalMast key = mastKeys.nextElement();
                 log.debug("{} auto mast add list {}", destinationSignalMast.getDisplayName(), key.getDisplayName());
+                key.removePropertyChangeListener(propertySignalMastListener);
                 key.addPropertyChangeListener(propertySignalMastListener);
-                String aspect = key.getAspect();
-                if ( aspect != null && !aspect.equals(autoMasts.get(key))) {
-                    if (isSignalMastIncluded(key)) {
-                        if (aspect.equals(getSignalMastState(key))) {
-                            routeclear = false;
-                        }
-                    } else {
-                        routeclear = false;
-                    }
-                }
             }
 
             for (NamedBeanSetting nbh : userSetMasts) {
                 SignalMast key = (SignalMast) nbh.getBean();
+                key.removePropertyChangeListener(propertySignalMastListener);
                 key.addPropertyChangeListener(propertySignalMastListener);
-                String aspect = key.getAspect();
-                log.debug("mast '{}' key aspect '{}'", destinationSignalMast.getDisplayName(), aspect);
-                if ((aspect == null) || (!aspect.equals(nbh.getStringSetting()))) {
-                    routeclear = false;
-                }
             }
             for (NamedBeanSetting nbh : userSetSensors) {
                 Sensor sensor = (Sensor) nbh.getBean();
+                sensor.removePropertyChangeListener(propertySensorListener);
                 sensor.addPropertyChangeListener(propertySensorListener, nbh.getBeanName(),
                     "Signal Mast Logic:" + source.getDisplayName() + " to " + destinationSignalMast.getDisplayName());
-                if (sensor.getKnownState() != nbh.getSetting()) {
-                    routeclear = false;
-                }
             }
 
-            for (Map.Entry<Block, Integer> entry : this.autoBlocks.entrySet()) {
-                log.debug("{} auto block add list {}", destinationSignalMast.getDisplayName(),
-                    entry.getKey().getDisplayName());
-                entry.getKey().addPropertyChangeListener(propertyBlockListener);
-                if (entry.getKey().getState() != entry.getValue()) {
-                    if (isBlockIncluded(entry.getKey())) {
-                        if (entry.getKey().getState() != getBlockState(entry.getKey())) {
-                            if (entry.getKey().getState() == Block.OCCUPIED && entry.getKey().getPermissiveWorking()) {
-                                permissiveBlock = true;
-                            } else {
-                                routeclear = false;
-                            }
-                        }
-                    } else {
-                        if (entry.getKey().getState() == Block.OCCUPIED && entry.getKey().getPermissiveWorking()) {
-                            permissiveBlock = true;
-                        } else if (entry.getKey().getState() == Block.UNDETECTED) {
-                            log.debug("Block {} is UNDETECTED so treat as unoccupied", entry.getKey().getDisplayName());
-                        } else {
-                            routeclear = false;
-                        }
-                    }
-                }
+            for (Block key : autoBlocks.keySet()) {
+                log.debug("{} auto block add list {}", destinationSignalMast.getDisplayName(), key.getDisplayName());
+                key.removePropertyChangeListener(propertyBlockListener);
+                key.addPropertyChangeListener(propertyBlockListener);
             }
 
             for (NamedBeanSetting nbh : userSetBlocks) {
                 Block key = (Block) nbh.getBean();
+                key.removePropertyChangeListener(propertyBlockListener);
                 key.addPropertyChangeListener(propertyBlockListener);
-                if (key.getState() != getBlockState(key)) {
-                    if (key.getState() == Block.OCCUPIED && key.getPermissiveWorking()) {
-                        permissiveBlock = true;
-                    } else {
-                        routeclear = false;
-                    }
-                }
-            }
-            if ( permissiveBlock
-                /* If a block has been found to be permissive, but the source signalmast
-                 does not support a call-on/permissive aspect then the route can not be set */
-                && getSourceMast().getAppearanceMap().getSpecificAppearance(SignalAppearanceMap.PERMISSIVE) == null) {
-                    routeclear = false;
-            }
-            if (routeclear) {
-                active = true;
-                setSignalAppearance();
-            } else {
-                permissiveBlock = false;
-                turnoutThrown = false;
             }
             destMastInit = true;
+
+            // Use the same checks as when one of these beans changes.
+            checkStateDetails();
         }
 
         void useLayoutEditor(boolean boo) throws JmriException {
@@ -2230,7 +2173,11 @@ public class DefaultSignalMastLogic extends AbstractNamedBean implements SignalM
                 setupLayoutEditorDetails();
             } else {
                 destinationBlock = null;
-                facingBlock = null;
+                // the facing block belongs to the source mast, so keep it while
+                // another destination still uses the Layout Editor
+                if (destList.values().stream().noneMatch(DestinationMast::useLayoutEditor)) {
+                    facingBlock = null;
+                }
                 protectingBlock = null;
                 setAutoBlocks(null);
                 setAutoTurnouts(null);
@@ -2262,20 +2209,20 @@ public class DefaultSignalMastLogic extends AbstractNamedBean implements SignalM
             // We don't care which Layout Editor panel the signal mast is on, just so long as
             // the routing is done via layout blocks.
             remoteProtectingBlock = null;
-            for (int i = 0; i < layout.size(); i++) {
-                log.debug("{} Layout name {}", destinationSignalMast.getDisplayName(), editor );
+            for (LayoutEditor panel : layout) {
+                log.debug("{} Layout name {}", destinationSignalMast.getDisplayName(), panel.getLayoutName());
                 if (facingBlock == null) {
-                    facingBlock = lbm.getFacingBlockByNamedBean(getSourceMast(), editor);
+                    facingBlock = lbm.getFacingBlockByNamedBean(getSourceMast(), panel);
                 }
                 if (protectingBlock == null && protectingBlocks.isEmpty()) {
                     //This is wrong
-                    protectingBlocks = lbm.getProtectingBlocksByNamedBean(getSourceMast(), editor);
+                    protectingBlocks = lbm.getProtectingBlocksByNamedBean(getSourceMast(), panel);
                 }
                 if (destinationBlock == null) {
-                    destinationBlock = lbm.getFacingBlockByNamedBean(destinationSignalMast, editor);
+                    destinationBlock = lbm.getFacingBlockByNamedBean(destinationSignalMast, panel);
                 }
                 if (remoteProtectingBlock == null) {
-                    remoteProtectingBlock = lbm.getProtectedBlockByNamedBean(destinationSignalMast, editor);
+                    remoteProtectingBlock = lbm.getProtectedBlockByNamedBean(destinationSignalMast, panel);
                 }
             }
             // At this point, if we are not using the Layout Editor turnout or block
@@ -2499,6 +2446,90 @@ public class DefaultSignalMastLogic extends AbstractNamedBean implements SignalM
                     }
                 }
             }
+            // ----- Begin Turntable Alignment Check -----
+            // For paths onto a turntable, we must add a condition for the turntable's alignment. The
+            // turnout that controls the turntable position is associated with the specific ray track.
+            // Each ray track can have a control turnout assigned. Setting this turnout to a specific
+            // state (usually THROWN) is the command to align the turntable to that ray.
+            // The following logic adds a CONDITION to the Signal Mast Logic, requiring that the
+            // correct ray's turnout is in its required state before the signal will clear.
+            // This does NOT command the turnout to move; it only checks its state for the interlocking.
+            Set<LayoutEditor> layout = InstanceManager.getDefault(EditorManager.class).getAll(LayoutEditor.class);
+            for (LayoutEditor lay : layout) {
+                for (LayoutTurntable turntable : lay.getLayoutTurntables()) {
+                    // Check for a path from an Approach Mast to the Buffer Mast (Path 3).
+                    // The destination block is the turntable block, and the destination mast is the buffer mast.
+                    if (turntable.getLayoutBlock() == destinationBlock && turntable.getBufferMast() == destinationSignalMast) {
+                        // The source mast's facing block is the ray block for this path.
+                        for (LayoutTurntable.RayTrack ray : turntable.getRayTrackList()) {
+                            if (ray.getConnect() != null && ray.getConnect().getLayoutBlock() == DefaultSignalMastLogic.this.facingBlock) {
+                                // This is the correct ray. Get its control turnout and required state.
+                                Turnout rayTurnout = ray.getTurnout();
+                                int requiredState = ray.getTurnoutState();
+                                if (rayTurnout != null) {
+                                    turnoutSettings.put(rayTurnout, requiredState);
+                                }
+                                break; // Found the ray, no need to check others.
+                            }
+                        }
+                    }
+                    // Check for a path from the Exit Mast to a remote mast (Path 1).
+                    // The source mast is the turntable's exit mast.
+                    if (turntable.getExitSignalMast() == getSourceMast()) {
+                        // The protecting block is the ray block for this path.
+                        for (LayoutTurntable.RayTrack ray : turntable.getRayTrackList()) {
+                            if (ray.getConnect() != null && ray.getConnect().getLayoutBlock() == protectingBlock) {
+                                // This is the correct ray. Get its control turnout and required state.
+                                Turnout rayTurnout = ray.getTurnout();
+                                int requiredState = ray.getTurnoutState();
+                                if (rayTurnout != null) {
+                                    turnoutSettings.put(rayTurnout, requiredState);
+                                }
+                                break; // Found the ray, no need to check others.
+                            }
+                        }
+                    }
+                }
+            }
+            // ----- End Turntable Alignment Check -----
+            // ----- Begin Traverser Alignment Check -----
+            for (LayoutEditor lay : layout) {
+                for (LayoutTraverser traverser : lay.getLayoutTraversers()) {
+                    // Check for a path from an Approach Mast to the Buffer Mast (Path 3).
+                    // The destination block is the traverser block, and the destination mast is the buffer mast.
+                    if (traverser.getLayoutBlock() == destinationBlock && traverser.getBufferMast() == destinationSignalMast) {
+                        // The source mast's facing block is the slot block for this path.
+                        for (LayoutTraverser.SlotTrack slot : traverser.getSlotList()) {
+                            if (slot.getConnect() != null && slot.getConnect().getLayoutBlock() == DefaultSignalMastLogic.this.facingBlock) {
+                                // This is the correct slot. Get its control turnout and required state.
+                                Turnout slotTurnout = slot.getTurnout();
+                                int requiredState = slot.getTurnoutState();
+                                if (slotTurnout != null) {
+                                    turnoutSettings.put(slotTurnout, requiredState);
+                                }
+                                break; // Found the slot, no need to check others.
+                            }
+                        }
+                    }
+                    // Check for a path from the Exit Mast to a remote mast (Path 1).
+                    // The source mast is the traverser's exit mast.
+                    if (traverser.getExitSignalMast() == getSourceMast()) {
+                        // The protecting block is the slot block for this path.
+                        for (LayoutTraverser.SlotTrack slot : traverser.getSlotList()) {
+                            if (slot.getConnect() != null && slot.getConnect().getLayoutBlock() == protectingBlock) {
+                                // This is the correct slot. Get its control turnout and required state.
+                                Turnout slotTurnout = slot.getTurnout();
+                                int requiredState = slot.getTurnoutState();
+                                if (slotTurnout != null) {
+                                    turnoutSettings.put(slotTurnout, requiredState);
+                                }
+                                break; // Found the slot, no need to check others.
+                            }
+                        }
+                    }
+                }
+            }
+            // ----- End Traverser Alignment Check -----
             if (useLayoutEditorTurnouts) {
                 setAutoTurnouts(turnoutSettings);
             }
@@ -2789,12 +2820,42 @@ public class DefaultSignalMastLogic extends AbstractNamedBean implements SignalM
             }
         };
 
+        /**
+         * Check if a block on this route has become occupied while the route
+         * needs it to be unoccupied.
+         *
+         * @param block the block to check
+         * @return true if the block is occupied, not in permissive working,
+         *         and this logic needs it to be unoccupied
+         */
+        boolean isOccupiedAgainstRoute(Block block) {
+            if (block.getState() != Block.OCCUPIED || block.getPermissiveWorking()) {
+                return false;
+            }
+            int required;
+            if (isBlockIncluded(block)) {
+                required = getBlockState(block);
+            } else if (autoBlocks.containsKey(block)) {
+                required = getAutoBlockState(block);
+            } else {
+                return false;
+            }
+            return required != Block.OCCUPIED && required != 0x03;
+        }
+
         protected PropertyChangeListener propertyBlockListener = new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent e) {
                 Block block = (Block) e.getSource();
                 log.debug("{} destination block {} trigger {} {}", destinationSignalMast.getDisplayName(), block.getDisplayName(), e.getPropertyName(), e.getNewValue());
-                if ( Block.PROPERTY_STATE.equals(e.getPropertyName()) || Block.PROPERTY_ALLOCATED.equals(e.getPropertyName())) {
+                if ( Block.PROPERTY_STATE.equals(e.getPropertyName()) && isOccupiedAgainstRoute(block)) {
+                    // Going to danger is not delayed, only a change towards clear is.
+                    log.debug("Block {} occupied, caused the signalmast to be set to danger", block.getDisplayName());
+                    if (active) {
+                        active = false;
+                        setSignalAppearance();
+                    }
+                } else if ( Block.PROPERTY_STATE.equals(e.getPropertyName()) || Block.PROPERTY_ALLOCATED.equals(e.getPropertyName())) {
                     // TODO: what is this?
                     log.debug("Included in user entered block {}", Boolean.toString(isBlockIncluded(block)));
                     log.debug("Included in AutoGenerated Block {}", Boolean.toString(autoBlocks.containsKey(block)));

@@ -102,6 +102,10 @@ public class JsonOperations {
      */
     public static final String HP = "hp";
     /**
+     * {@value #ORDER}
+     */
+    public static final String ORDER = "order";
+    /**
      * {@value #ROAD}
      */
     public static final String ROAD = "road";
@@ -165,6 +169,18 @@ public class JsonOperations {
      * @since 5.4.0
      */
     public static final String DIVISION = "division";
+    /**
+     * {@value #LAST_TRAIN}
+     */
+    public static final String LAST_TRAIN = "last train";
+    /**
+     * {@value #LAST_MOVED}
+     */
+    public static final String LAST_MOVED = "last moved";
+    /**
+     * {@value #LAST_LOCATION}
+     */
+    public static final String LAST_LOCATION = "last location";
     /**
      * {@value #BLOCKING_ORDER}
      */

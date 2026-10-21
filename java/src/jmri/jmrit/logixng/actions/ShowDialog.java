@@ -159,8 +159,8 @@ public class ShowDialog extends AbstractDigitalAction
 
     /** {@inheritDoc} */
     @Override
-    public Category getCategory() {
-        return Category.OTHER;
+    public LogixNG_Category getCategory() {
+        return LogixNG_Category.OTHER;
     }
 
     private List<Object> getDataValues() throws JmriException {
@@ -665,6 +665,6 @@ public class ShowDialog extends AbstractDigitalAction
     }
 
 
-    private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ShowDialog.class);
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ShowDialog.class);
 
 }

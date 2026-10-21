@@ -1,11 +1,15 @@
 package jmri.jmrix.openlcb.swing.lccpro;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.datatransfer.Transferable;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import javax.swing.*;
@@ -31,11 +35,13 @@ import jmri.util.datatransfer.RosterEntrySelection;
 import jmri.util.swing.*;
 import jmri.util.swing.multipane.TwoPaneTBWindow;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+
 import org.openlcb.*;
 
 /**
  * A window for LCC Network management.
- * <p>
  *
  * @author Bob Jacobsen Copyright (C) 2024
  */
@@ -107,7 +113,7 @@ public class LccProFrame extends TwoPaneTBWindow  {
     JComboBox<String> matchGroupName;   // required group name to display; index <= 0 is all
 
     final JLabel statusField = new JLabel();
-    final static Dimension summaryPaneDim = new Dimension(0, 170);
+    static final Dimension summaryPaneDim = new Dimension(0, 170);
 
     protected void additionsToToolBar() {
         getToolBar().add(Box.createHorizontalGlue());
@@ -144,7 +150,7 @@ public class LccProFrame extends TwoPaneTBWindow  {
 
         var searchPanel = new JPanel();
         searchPanel.setLayout(new WrapLayout());
-        searchPanel.add(new JLabel("Search Node Names:"));
+        searchPanel.add(new JLabel(Bundle.getMessage("FrameSearchNodeNames")));
         var searchField = new JTextField(12) {
             @Override
             public Dimension getMaximumSize() {
@@ -189,8 +195,8 @@ public class LccProFrame extends TwoPaneTBWindow  {
         
         var groupPanel = new JPanel();
         groupPanel.setLayout(new WrapLayout());
-        JLabel display = new JLabel("Display Node Groups:");
-        display.setToolTipText("Use the popup menu on a node's row to define node groups");
+        JLabel display = new JLabel(Bundle.getMessage("FrameDisplayNodeGroups"));
+        display.setToolTipText(Bundle.getMessage("FrameDisplayNodeGroupsTt"));
         groupPanel.add(display);
         
         matchGroupName = new JComboBox<>();
@@ -212,7 +218,7 @@ public class LccProFrame extends TwoPaneTBWindow  {
     // load updateMatchGroup combobox with current contents
     protected void updateMatchGroupName() {
         matchGroupName.removeAllItems();
-        matchGroupName.addItem("(All Groups)");
+        matchGroupName.addItem(Bundle.getMessage("FrameAllGroups"));
         
         var list = groupStore.getGroupNames();
         for (String group : list) {
@@ -578,7 +584,78 @@ public class LccProFrame extends TwoPaneTBWindow  {
         action.actionPerformed(null);
         firePropertyChange("closewindow", "setEnabled", true);
     }
+    
+    /**
+     * Print the displayed table, as displayed.
+     *
+     */
+    protected void printCurrentTable() {
+        try {
+            var cal = java.util.Calendar.getInstance();
+            var sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm");
+            String time = sdf.format(cal.getTime());
 
+            String group = matchGroupName.getSelectedItem().toString();
+
+            nodetable.getTable().print(javax.swing.JTable.PrintMode.FIT_WIDTH,
+                            null,  // no header
+                            new java.text.MessageFormat(group+"    - {0} -   "+time)  // spaces for heuristic formatting, don't change
+                            );
+        } catch (java.awt.print.PrinterException ep) {
+            log.error("While printing",ep);
+        }    
+    }
+
+    JFileChooser fileChooser;
+    
+    protected void exportCurrentTable() {
+        if (fileChooser == null) {
+            fileChooser = new jmri.util.swing.JmriJFileChooser();
+        }
+
+        int retVal = fileChooser.showSaveDialog(this);
+
+        if (retVal == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (log.isDebugEnabled()) {
+                log.debug("start to export to CSV file {}", file);
+            }
+
+            try (CSVPrinter str = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8), CSVFormat.DEFAULT)) {
+                var table = nodetable.getTable();
+                str.printRecord(
+                    table.getColumnName(LccProTableModel.NAMECOL),  // done this way in case columns have been reordered
+                    table.getColumnName(LccProTableModel.IDCOL),
+                    table.getColumnName(LccProTableModel.MFGCOL),
+                    table.getColumnName(LccProTableModel.MODELCOL),
+                    table.getColumnName(LccProTableModel.SVERSIONCOL),
+                    table.getColumnName(LccProTableModel.DESCRIPTIONCOL)
+                );
+                for (int row = 0; row < table.getRowCount(); row++) {
+                    var name = table.getValueAt(row, LccProTableModel.NAMECOL);
+                    var id = table.getValueAt(row, LccProTableModel.IDCOL);
+                    var mfg = table.getValueAt(row, LccProTableModel.MFGCOL);
+                    var model = table.getValueAt(row, LccProTableModel.MODELCOL);
+                    var software = table.getValueAt(row, LccProTableModel.SVERSIONCOL);
+                    var description = table.getValueAt(row, LccProTableModel.DESCRIPTIONCOL);
+                    
+                    str.printRecord(name, id, mfg, model, software, description);
+                }
+                str.flush();
+            } catch (IOException ex) {
+                log.error("Error writing file", ex);
+            }
+        }
+    }
+
+    /**
+     * Sets the backup directory used by the Backup buttons and 
+     * the NodeBackupAction class.
+     */
+    protected void setBackupDirectory() {
+        NodeBackupAction.showOpenDialog(this);
+    }
+    
     /**
      * Match the first argument in the array against a locally-known method.
      *
@@ -607,6 +684,15 @@ public class LccProFrame extends TwoPaneTBWindow  {
             case "resettablecolumns":
                 nodetable.resetColumnWidths();
                 break;
+            case "printcurrenttable":
+                printCurrentTable();
+                break;
+            case "exportcurrenttable":
+                exportCurrentTable();
+                break;
+            case "setbackupdirectory":
+                setBackupDirectory();
+                break;
             default:
                 log.error("method {} not found", args[0]);
                 break;
@@ -634,25 +720,31 @@ public class LccProFrame extends TwoPaneTBWindow  {
         
         NodeID node = new NodeID((String) nodetable.getTable().getValueAt(row, LccProTableModel.IDCOL));
         
-        var addMenu = new JMenuItem("Add Node To Group");
+        var addMenu = new JMenuItem(Bundle.getMessage("FrameAddNodeToGroup"));
         addMenu.addActionListener((ActionEvent evt) -> {
             addToGroupPrompt(node);
         });
         popupMenu.add(addMenu);
 
-        var removeMenu = new JMenuItem("Remove Node From Group");
+        var removeMenu = new JMenuItem(Bundle.getMessage("FrameRemoveNodeFromGroup"));
         removeMenu.addActionListener((ActionEvent evt) -> {
             removeFromGroupPrompt(node);
         });
         popupMenu.add(removeMenu);
         
-        var restartMenu = new JMenuItem("Restart Node");
+        var refreshMenu = new JMenuItem(Bundle.getMessage("FrameRefreshNode"));
+        refreshMenu.addActionListener((ActionEvent evt) -> {
+            refresh(node);
+        });
+        popupMenu.add(refreshMenu);
+        
+        var restartMenu = new JMenuItem(Bundle.getMessage("FrameRestartNode"));
         restartMenu.addActionListener((ActionEvent evt) -> {
             restart(node);
         });
         popupMenu.add(restartMenu);
         
-        var clearCdiMenu = new JMenuItem("Clear CDI Cache");
+        var clearCdiMenu = new JMenuItem(Bundle.getMessage("FrameClearCdiCache"));
         clearCdiMenu.addActionListener((ActionEvent evt) -> {
             clearCDI(node);
         });
@@ -663,7 +755,7 @@ public class LccProFrame extends TwoPaneTBWindow  {
 
     void addToGroupPrompt(NodeID node) {
         var group = JmriJOptionPane.showInputDialog(
-                    null, "Add to Group:", "Add to Group", 
+                    null, Bundle.getMessage("FrameAddToGroup"), Bundle.getMessage("FrameAddToGroupTit"), 
                     JmriJOptionPane.QUESTION_MESSAGE
                 );
         if (! group.isEmpty()) {
@@ -674,7 +766,7 @@ public class LccProFrame extends TwoPaneTBWindow  {
     
     void removeFromGroupPrompt(NodeID node) {
         var group = JmriJOptionPane.showInputDialog(
-                    null, "Remove from Group:", "Remove from Group", 
+                    null, Bundle.getMessage("FrameRemoveFromGroup"), Bundle.getMessage("FrameRemoveFromGroupTit"), 
                     JmriJOptionPane.QUESTION_MESSAGE
                 );
         if (! group.isEmpty()) {
@@ -683,6 +775,12 @@ public class LccProFrame extends TwoPaneTBWindow  {
         updateMatchGroupName();
     }
     
+    void refresh(NodeID node) {
+        var srcID = memo.get(org.openlcb.NodeID.class);
+        memo.get(org.openlcb.Connection.class).put(new org.openlcb.ProtocolIdentificationRequestMessage(srcID, node), null);
+        memo.get(org.openlcb.Connection.class).put(new org.openlcb.SimpleNodeIdentInfoRequestMessage(srcID, node), null);
+    }
+
     void restart(NodeID node) {
         memo.get(OlcbInterface.class).getDatagramService()
             .sendData(node, new int[] {0x20, 0xA9});
@@ -715,6 +813,8 @@ public class LccProFrame extends TwoPaneTBWindow  {
     }
 
     @Override
+    @SuppressFBWarnings(value = "OVERRIDING_METHODS_MUST_INVOKE_SUPER",
+            justification = "This calls closeWindow which invokes the super method")
     public void windowClosing(WindowEvent e) {
         closeWindow(e);
     }
@@ -763,37 +863,37 @@ public class LccProFrame extends TwoPaneTBWindow  {
             var gbl = new jmri.util.javaworld.GridLayout2(7,2);
             setLayout(gbl);
             
-            var a = new JLabel("Name: ");
+            var a = new JLabel(Bundle.getMessage("FrameName"));
             a.setHorizontalAlignment(SwingConstants.RIGHT);
             add(a);
             add(name);
 
-            a = new JLabel("Description: ");
+            a = new JLabel(Bundle.getMessage("FrameDescription"));
             a.setHorizontalAlignment(SwingConstants.RIGHT);
             add(a);
             add(desc);
 
-            a = new JLabel("Node ID: ");
+            a = new JLabel(Bundle.getMessage("FrameNodeId"));
             a.setHorizontalAlignment(SwingConstants.RIGHT);
             add(a);
             add(nodeID);
             
-            a = new JLabel("Manufacturer: ");
+            a = new JLabel(Bundle.getMessage("FrameManufacturer"));
             a.setHorizontalAlignment(SwingConstants.RIGHT);
             add(a);
             add(mfg);
 
-            a = new JLabel("Model: ");
+            a = new JLabel(Bundle.getMessage("FrameModel"));
             a.setHorizontalAlignment(SwingConstants.RIGHT);
             add(a);
             add(model);
 
-            a = new JLabel("Hardware Version: ");
+            a = new JLabel(Bundle.getMessage("FrameHardwareVersion"));
             a.setHorizontalAlignment(SwingConstants.RIGHT);
             add(a);
             add(hardver);
 
-            a = new JLabel("Software Version: ");
+            a = new JLabel(Bundle.getMessage("FrameSoftwareVersion"));
             a.setHorizontalAlignment(SwingConstants.RIGHT);
             add(a);
             add(softver);
@@ -822,7 +922,7 @@ public class LccProFrame extends TwoPaneTBWindow  {
         
         public NodePipPane () {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            add(new JLabel("Supported Protocols:"));
+            add(new JLabel(Bundle.getMessage("FrameSupportedProtocols")));
         }
         
         public void update(MimicNodeStore.NodeMemo nodememo) {
@@ -831,7 +931,7 @@ public class LccProFrame extends TwoPaneTBWindow  {
             revalidate();
             repaint();
             // add heading
-            add(new JLabel("Supported Protocols:"));
+            add(new JLabel(Bundle.getMessage("FrameSupportedProtocols")));
             // and display new content
             var pip = nodememo.getProtocolIdentification();
             var names = pip.getProtocolNames();

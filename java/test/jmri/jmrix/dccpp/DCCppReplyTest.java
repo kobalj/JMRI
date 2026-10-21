@@ -4,6 +4,7 @@ import jmri.util.JUnitUtil;
 import jmri.util.junit.annotations.*;
 
 import jmri.util.JUnitAppender;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import org.junit.Assert;
@@ -343,6 +344,18 @@ public class DCCppReplyTest extends jmri.jmrix.AbstractMessageTestBase {
         Assert.assertTrue(r.isAutomationIDsReply());
         r = DCCppReply.parseDCCppReply("jA 456 R \"description\"");
         Assert.assertTrue(r.isAutomationIDReply());
+        r = DCCppReply.parseDCCppReply("jB 123 3");
+        Assert.assertTrue(r.isAutomationStateReply());
+        r = DCCppReply.parseDCCppReply("jB 123 \"description\"");
+        Assert.assertTrue(r.isAutomationCaptionReply());
+        r = DCCppReply.parseDCCppReply("jB -123 3");
+        Assert.assertTrue(r.isAutomationStateReply());
+        r = DCCppReply.parseDCCppReply("jB -123 \"description\"");
+        Assert.assertTrue(r.isAutomationCaptionReply());
+        r = DCCppReply.parseDCCppReply("jB 123 X");
+        Assert.assertFalse(r.isAutomationStateReply());
+        r = DCCppReply.parseDCCppReply("jB 123 1 \"description\"");
+        Assert.assertFalse(r.isAutomationCaptionReply());
 
         //max Num Slots
         r = DCCppReply.parseDCCppReply("# 50");
@@ -431,6 +444,24 @@ public class DCCppReplyTest extends jmri.jmrix.AbstractMessageTestBase {
         Assert.assertEquals(789, (int) r.getAutomationIDList().get(2));
         Assert.assertEquals(3, r.getAutomationIDList().size());
         Assert.assertEquals("Monitor string", "AutomationIDs:[123, 456, 789]", r.toMonitorString());
+        r = DCCppReply.parseDCCppReply("jG 123 456 789");
+        Assert.assertTrue(r.isCurrentMaxesReply());
+        Assert.assertFalse(r.isCurrentValuesReply());
+        Assert.assertEquals(789, (int) r.getCurrentMaxesList().get(2));
+        Assert.assertEquals(3, r.getCurrentMaxesList().size());
+        Assert.assertEquals("Monitor string", "CurrentMaxes:[123, 456, 789]", r.toMonitorString());
+        r = DCCppReply.parseDCCppReply("jI 123 456 789");
+        Assert.assertTrue(r.isCurrentValuesReply());
+        Assert.assertFalse(r.isCurrentMaxesReply());
+        Assert.assertEquals(789, (int) r.getCurrentValuesList().get(2));
+        Assert.assertEquals(3, r.getCurrentValuesList().size());
+        Assert.assertEquals("Monitor string", "CurrentValues:[123, 456, 789]", r.toMonitorString());
+        r = DCCppReply.parseDCCppReply("jI -1 -1");
+        Assert.assertTrue(r.isCurrentValuesReply());
+        Assert.assertEquals(-1, (int) r.getCurrentValuesList().get(0));
+        Assert.assertEquals(-1, (int) r.getCurrentValuesList().get(1));
+        Assert.assertEquals(2, r.getCurrentValuesList().size());
+        Assert.assertEquals("Monitor string", "CurrentValues:[-1, -1]", r.toMonitorString());
         r = DCCppReply.parseDCCppReply("jC 222 4"); //time and rate
         Assert.assertTrue(r.isClockReply());
         Assert.assertEquals(222, r.getClockMinutesInt());
@@ -453,6 +484,10 @@ public class DCCppReplyTest extends jmri.jmrix.AbstractMessageTestBase {
         Assert.assertFalse(r.isAutomationIDsReply());
         r = DCCppReply.parseDCCppReply("jA 123 toolong \"gooddescription\"");
         Assert.assertFalse(r.isAutomationIDReply());
+        r = DCCppReply.parseDCCppReply("jG 4998 4998 notint");        
+        Assert.assertFalse(r.isCurrentMaxesReply());
+        r = DCCppReply.parseDCCppReply("jI 123 456 notint");        
+        Assert.assertFalse(r.isCurrentValuesReply());
         r = DCCppReply.parseDCCppReply("jC 222 4 xx"); //time and rate
         Assert.assertFalse(r.isClockReply());
         r = DCCppReply.parseDCCppReply("jC x222 4 xx"); //time and rate
@@ -461,7 +496,9 @@ public class DCCppReplyTest extends jmri.jmrix.AbstractMessageTestBase {
         //TrackManager
         r = DCCppReply.parseDCCppReply("= B PROG 123");
         Assert.assertTrue(r.isTrackManagerReply());
-        Assert.assertEquals("Monitor string", "TrackManager:= B PROG 123", r.toMonitorString());
+        Assert.assertEquals(r.getTrackManagerLetter(), 'B');
+        Assert.assertEquals(r.getTrackManagerMode(), "PROG");
+        Assert.assertEquals("Monitor string", "TrackManager Letter:B Mode:PROG", r.toMonitorString());
 
         //LCD message
         r = DCCppReply.parseDCCppReply("@ 0 12 \"this is a test lcd message 12345\"");
@@ -718,6 +755,55 @@ public class DCCppReplyTest extends jmri.jmrix.AbstractMessageTestBase {
         Assert.assertEquals("Monitor string", "Turnout IDs:[]", l.toMonitorString());
         l = DCCppReply.parseDCCppReply("jT 3456 C \"\""); //no description defined
         Assert.assertEquals("Monitor string", "Turnout ID:3456 State:C Desc:''", l.toMonitorString());
+    }
+
+    @Test
+    public void testTurnoutIDListValidation() {
+        // zero is out-of-range and filtered
+        DCCppReply r = DCCppReply.parseDCCppReply("jT 0 123");
+        ArrayList<Integer> ids = r.getTurnoutIDList();
+        Assert.assertEquals(1, ids.size());
+        Assert.assertEquals(123, (int) ids.get(0));
+        JUnitAppender.assertWarnMessage("Ignoring out-of-range turnout ID 0 in jT response (buffer overflow?)");
+
+        // ID above MAX_TURNOUT_ADDRESS is filtered
+        r = DCCppReply.parseDCCppReply("jT 123 32768");
+        ids = r.getTurnoutIDList();
+        Assert.assertEquals(1, ids.size());
+        Assert.assertEquals(123, (int) ids.get(0));
+        JUnitAppender.assertWarnMessage("Ignoring out-of-range turnout ID 32768 in jT response (buffer overflow?)");
+    }
+
+    @Test
+    public void testAutomationReplyProperties() {
+        DCCppReply r;
+
+        r = DCCppReply.parseDCCppReply("jA 42 R \"Station Loop\"");
+        Assert.assertTrue(r.isAutomationIDReply());
+        Assert.assertEquals(42, r.getAutomationIDInt());
+        Assert.assertEquals("42", r.getAutomationIDString());
+        Assert.assertEquals("R", r.getAutomationTypeString());
+        Assert.assertEquals("Station Loop", r.getAutomationDescString());
+
+        r = DCCppReply.parseDCCppReply("jA 7 A \"Yard Switcher\"");
+        Assert.assertTrue(r.isAutomationIDReply());
+        Assert.assertEquals(7, r.getAutomationIDInt());
+        Assert.assertEquals("A", r.getAutomationTypeString());
+        Assert.assertEquals("Yard Switcher", r.getAutomationDescString());
+
+        r = DCCppReply.parseDCCppReply("jA -5 R \"Reverse Loop\"");
+        Assert.assertTrue(r.isAutomationIDReply());
+        Assert.assertEquals(-5, r.getAutomationIDInt());
+
+        r = DCCppReply.parseDCCppReply("jB 42 2");
+        Assert.assertTrue(r.isAutomationStateReply());
+        Assert.assertEquals(42, r.getAutomationIDInt());
+        Assert.assertEquals("2", r.getAutomationStateString());
+
+        r = DCCppReply.parseDCCppReply("jB 42 \"Platform 1\"");
+        Assert.assertTrue(r.isAutomationCaptionReply());
+        Assert.assertEquals(42, r.getAutomationIDInt());
+        Assert.assertEquals("Platform 1", r.getAutomationCaptionString());
     }
 
     @BeforeEach

@@ -49,6 +49,15 @@ public class TurnoutIcon extends PositionableIcon implements java.beans.Property
         setPopupUtility(null);
     }
 
+    public TurnoutIcon(NamedIcon s, Editor editor) {
+        // super ctor call to make sure this is an icon label
+        super(s, editor);
+        setOpaque(false);
+        _control = true;
+        // setPopupUtility(new TurnoutPopupUtil(this, this));
+        setPopupUtility(null);
+    }
+
     @Override
     public Positionable deepClone() {
         TurnoutIcon pos = new TurnoutIcon(_editor);
@@ -150,8 +159,10 @@ public class TurnoutIcon extends PositionableIcon implements java.beans.Property
     @Override
     public int maxHeight() {
         int max = 0;
-        for (NamedIcon namedIcon : _iconStateMap.values()) {
-            max = Math.max(namedIcon.getIconHeight(), max);
+        if (_iconStateMap != null) {
+            for (NamedIcon namedIcon : _iconStateMap.values()) {
+                max = Math.max(namedIcon.getIconHeight(), max);
+            }
         }
         return max;
     }
@@ -159,8 +170,10 @@ public class TurnoutIcon extends PositionableIcon implements java.beans.Property
     @Override
     public int maxWidth() {
         int max = 0;
-        for (NamedIcon namedIcon : _iconStateMap.values()) {
-            max = Math.max(namedIcon.getIconWidth(), max);
+        if ( _iconStateMap != null ) {
+            for (NamedIcon namedIcon : _iconStateMap.values()) {
+                max = Math.max(namedIcon.getIconWidth(), max);
+            }
         }
         return max;
     }

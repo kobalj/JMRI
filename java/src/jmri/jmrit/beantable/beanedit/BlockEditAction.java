@@ -115,7 +115,7 @@ public class BlockEditAction extends BeanEditAction<Block> {
 
         basic.addItem(new BeanEditItem(null, null, Bundle.getMessage("BlockPropertiesText")));
         lengthSpinner.setModel( new SpinnerNumberModel(
-            0f, 0f, 1000f, 0.01f));
+            Float.valueOf(0f), Float.valueOf(0f), Float.valueOf(1000f), Float.valueOf(0.01f)));
         lengthSpinner.setEditor(new JSpinner.NumberEditor(lengthSpinner, "###0.00"));
         lengthSpinner.setPreferredSize(new JTextField(8).getPreferredSize());
 
@@ -245,6 +245,6 @@ public class BlockEditAction extends BeanEditAction<Block> {
         return basic;
     }
 
-    // private final static Logger log = LoggerFactory.getLogger(BlockEditAction.class);
+    // private static final Logger log = LoggerFactory.getLogger(BlockEditAction.class);
 
 }

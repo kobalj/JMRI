@@ -4,7 +4,8 @@ import java.awt.GridBagLayout;
 
 import javax.swing.*;
 
-import jmri.jmrit.operations.locations.*;
+import jmri.jmrit.operations.locations.Location;
+import jmri.jmrit.operations.locations.Track;
 import jmri.jmrit.operations.locations.schedules.tools.SchedulesAndStagingAction;
 import jmri.jmrit.operations.locations.tools.TrackDestinationEditAction;
 import jmri.jmrit.operations.routes.Route;
@@ -27,19 +28,19 @@ public class StagingEditFrame extends TrackEditFrame {
     JCheckBox blockCarsCheckBox = new JCheckBox(Bundle.getMessage("BlockCars"));
 
     JPanel panelLoad = panelOpt4;
-
-    public StagingEditFrame() {
+    
+    public StagingEditFrame(Location location) {
         super(Bundle.getMessage("AddStaging"));
+        initComponents(location, null);
     }
     
-    @Override
-    public void initComponents(Track track) {
-        setTitle(Bundle.getMessage("EditStaging", track.getLocation().getName()));
+    public StagingEditFrame(Track track) {
+        super(Bundle.getMessage("EditStaging", track.getLocation().getName()));
         initComponents(track.getLocation(), track);
     }
 
     @Override
-    public void initComponents(Location location, Track track) {
+    protected void initComponents(Location location, Track track) {
         _type = Track.STAGING;
 
         // setup the optional panel with staging stuff
@@ -110,6 +111,13 @@ public class StagingEditFrame extends TrackEditFrame {
         addCheckBoxAction(loadCheckBox);
         addCheckBoxAction(loadAnyCheckBox);
         addCheckBoxAction(loadAnyStagingCheckBox);
+
+        swapLoadsCheckBox.setToolTipText(Bundle.getMessage("ABV_SwapDefaultLoads"));
+        emptyCheckBox.setToolTipText(Bundle.getMessage("ABV_EmptyDefaultLoads"));
+        emptyCustomCheckBox.setToolTipText(Bundle.getMessage("ABV_EmptyCustomLoads"));
+        loadCheckBox.setToolTipText(Bundle.getMessage("ABV_GenerateCustomLoad"));
+        loadAnyCheckBox.setToolTipText(Bundle.getMessage("ABV_GenerateCustomLoadAnySpur"));
+        loadAnyStagingCheckBox.setToolTipText(Bundle.getMessage("ABV_GereateCustomLoadStaging"));
 
         // finish
         panelOrder.setVisible(false); // Car order out of staging isn't necessary
@@ -230,5 +238,5 @@ public class StagingEditFrame extends TrackEditFrame {
         }
     }
 
-//    private final static Logger log = LoggerFactory.getLogger(StagingEditFrame.class);
+//    private static final Logger log = LoggerFactory.getLogger(StagingEditFrame.class);
 }

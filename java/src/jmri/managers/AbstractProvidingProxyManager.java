@@ -91,6 +91,7 @@ abstract public class AbstractProvidingProxyManager<E extends NamedBean> extends
      * @param systemName the system name
      * @param userName   the user name
      * @return requested NamedBean object (never null)
+     * @throws IllegalArgumentException when needed
      */
     @Nonnull
     public E newNamedBean(@Nonnull String systemName, String userName) throws IllegalArgumentException {
@@ -121,6 +122,6 @@ abstract public class AbstractProvidingProxyManager<E extends NamedBean> extends
     abstract protected E makeBean(Manager<E> manager,@Nonnull String systemName, String userName) throws IllegalArgumentException;
 
     // initialize logging
-    private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AbstractProvidingProxyManager.class);
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AbstractProvidingProxyManager.class);
 
 }

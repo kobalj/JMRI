@@ -7,9 +7,6 @@ import java.util.List;
 
 import javax.swing.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jmri.InstanceManager;
 import jmri.jmrit.operations.OperationsFrame;
 import jmri.jmrit.operations.locations.*;
@@ -20,9 +17,13 @@ import jmri.jmrit.operations.routes.Route;
 import jmri.jmrit.operations.routes.RouteManager;
 import jmri.jmrit.operations.setup.Control;
 import jmri.jmrit.operations.setup.Setup;
-import jmri.jmrit.operations.trains.*;
+import jmri.jmrit.operations.trains.Train;
+import jmri.jmrit.operations.trains.TrainManager;
 import jmri.jmrit.operations.trains.trainbuilder.TrainCommon;
 import jmri.util.davidflanagan.HardcopyWriter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Frame to print a summary of the Location Roster contents
@@ -32,18 +33,18 @@ import jmri.util.davidflanagan.HardcopyWriter;
  *
  * @author Bob Jacobsen Copyright (C) 2003
  * @author Dennis Miller Copyright (C) 2005
- * @author Daniel Boudreau Copyright (C) 2008, 2011, 2012, 2014, 2022, 2023
+ * @author Daniel Boudreau Copyright (C) 2008, 2011, 2012, 2014, 2022, 2023, 2026
  */
 public class PrintLocationsFrame extends OperationsFrame {
 
-    static final String FORM_FEED = "\f"; // NOI18N
-    static final String TAB = "\t"; // NOI18N
-    static final int TAB_LENGTH = 10;
-    static final String SPACES_2 = "  ";
-    static final String SPACES_3 = "   ";
-    static final String SPACES_4 = "    ";
+    protected static final String FORM_FEED = "\f"; // NOI18N
+    protected static final String TAB = "\t"; // NOI18N
+    protected static final int TAB_LENGTH = 10;
+    protected static final String SPACES_2 = "  ";
+    protected static final String SPACES_3 = "   ";
+    protected static final String SPACES_4 = "    ";
 
-    static final int MAX_NAME_LENGTH = Control.max_len_string_location_name;
+    protected static final int MAX_NAME_LENGTH = Control.max_len_string_location_name;
 
     JCheckBox printLocations = new JCheckBox(Bundle.getMessage("PrintLocations"));
     JCheckBox printSchedules = new JCheckBox(Bundle.getMessage("PrintSchedules"));
@@ -130,7 +131,8 @@ public class PrintLocationsFrame extends OperationsFrame {
             title = _location.getName();
         }
         try (HardcopyWriter writer =
-                new HardcopyWriter(new Frame(), title, Control.reportFontSize, .5, .5, .5, .5, _isPreview)) {
+                new HardcopyWriter(new Frame(), title, null, null, Control.reportFontSize, .5 * 72, .5 * 72, .5 * 72,
+                        .5 * 72, _isPreview, "", false, true, null, null)) {
 
             this.writer = writer;
 
@@ -159,7 +161,7 @@ public class PrintLocationsFrame extends OperationsFrame {
                 printErrorAnalysisSelected();
             }
         } catch (HardcopyWriter.PrintCanceledException ex) {
-            log.debug("Print cancelled");
+            log.debug("Print canceled");
         } catch (IOException we) {
             log.error("Error printing PrintLocationAction: {}", we.getLocalizedMessage());
         }
@@ -179,7 +181,7 @@ public class PrintLocationsFrame extends OperationsFrame {
                 TAB +
                 TAB +
                 Bundle.getMessage("Length") +
-                " " +
+                "  " +
                 Bundle.getMessage("Used") +
                 TAB +
                 Bundle.getMessage("RS") +
@@ -188,18 +190,19 @@ public class PrintLocationsFrame extends OperationsFrame {
                 TAB +
                 Bundle.getMessage("Engines") +
                 TAB +
-                Bundle.getMessage("Pickups") +
+                padAndTruncate(Bundle.getMessage("Pickups"), 7) +
                 " " +
                 Bundle.getMessage("Drop") +
                 NEW_LINE;
         writer.write(s);
+
         for (Location location : locations) {
             if (_location != null && location != _location) {
                 continue;
             }
             // location name, track length, used, number of RS, scheduled pick
             // ups and drops
-            s = padOutString(location.getName(), MAX_NAME_LENGTH) +
+            s = padAndTruncate(location.getName(), MAX_NAME_LENGTH) +
                     TAB +
                     "  " +
                     Integer.toString(location.getLength()) +
@@ -301,7 +304,7 @@ public class PrintLocationsFrame extends OperationsFrame {
 
     private void printSchedulesSelected() throws IOException {
         List<Location> locations = lmanager.getLocationsByNameList();
-        String s = padOutString(Bundle.getMessage("Schedules"), MAX_NAME_LENGTH) +
+        String s = padAndTruncate(Bundle.getMessage("Schedules"), MAX_NAME_LENGTH) +
                 " " +
                 Bundle.getMessage("Location") +
                 " - " +
@@ -318,7 +321,7 @@ public class PrintLocationsFrame extends OperationsFrame {
                 for (Track spur : spurs) {
                     if (spur.getScheduleId().equals(schedule.getId())) {
                         // pad out schedule name
-                        s = padOutString(schedule.getName(),
+                        s = padAndTruncate(schedule.getName(),
                                 MAX_NAME_LENGTH) + " " + location.getName() + " - " + spur.getName();
                         String status = spur.checkScheduleValid();
                         if (!status.equals(Schedule.SCHEDULE_OKAY)) {
@@ -334,8 +337,12 @@ public class PrintLocationsFrame extends OperationsFrame {
                         }
                         s = s + NEW_LINE;
                         writer.write(s);
+                        if (!schedule.getComment().isBlank()) {
+                            s = padAndTruncate("", MAX_NAME_LENGTH) + SPACES_3 + schedule.getComment() + NEW_LINE;
+                            writer.write(s);
+                        }
                         // show the schedule's mode
-                        s = padOutString("", MAX_NAME_LENGTH) +
+                        s = padAndTruncate("", MAX_NAME_LENGTH) +
                                 SPACES_3 +
                                 Bundle.getMessage("ScheduleMode") +
                                 ": " +
@@ -344,7 +351,7 @@ public class PrintLocationsFrame extends OperationsFrame {
                         writer.write(s);
                         // show alternate track if there's one
                         if (spur.getAlternateTrack() != null) {
-                            s = padOutString("", MAX_NAME_LENGTH) +
+                            s = padAndTruncate("", MAX_NAME_LENGTH) +
                                     SPACES_3 +
                                     Bundle.getMessage("AlternateTrackName", spur.getAlternateTrack().getName()) +
                                     NEW_LINE;
@@ -352,7 +359,7 @@ public class PrintLocationsFrame extends OperationsFrame {
                         }
                         // show custom loads from staging if not 100%
                         if (spur.getReservationFactor() != 100) {
-                            s = padOutString("", MAX_NAME_LENGTH) +
+                            s = padAndTruncate("", MAX_NAME_LENGTH) +
                                     SPACES_3 +
                                     Bundle.getMessage("PercentageStaging",
                                             spur.getReservationFactor()) +
@@ -369,36 +376,46 @@ public class PrintLocationsFrame extends OperationsFrame {
             s = schedule.getName() + NEW_LINE;
             writer.write(s);
 
+            // set the minimum field lengths
+            int loadNameLength = cls.getMaxNameLength() + 1;
+            if (loadNameLength < Bundle.getMessage("Receive").length() + 1) {
+                loadNameLength = Bundle.getMessage("Receive").length() + 1;
+            }
+            int locationNameLength = lmanager.getMaxLocationNameLength() + 1;
+            if (locationNameLength < Bundle.getMessage("Destination").length() + 1) {
+                locationNameLength = Bundle.getMessage("Destination").length() + 1;
+            }
+
             for (ScheduleItem si : schedule.getItemsBySequenceList()) {
-                s = padOutString(Bundle.getMessage("Type"), cts.getMaxNameLength() + 1) +
-                        padOutString(Bundle.getMessage("Receive"), cls.getMaxNameLength() + 1) +
-                        padOutString(Bundle.getMessage("Ship"), cls.getMaxNameLength() + 1) +
-                        padOutString(Bundle.getMessage("Destination"), lmanager.getMaxLocationNameLength() + 1) +
+                s = padAndTruncate(Bundle.getMessage("Type"), cts.getMaxNameLength() + 1) +
+                        padAndTruncate(Bundle.getMessage("Receive"), loadNameLength) +
+                        padAndTruncate(Bundle.getMessage("Ship"), loadNameLength) +
+                        padAndTruncate(Bundle.getMessage("Destination"), locationNameLength) +
                         Bundle.getMessage("Track") +
                         NEW_LINE;
                 writer.write(s);
-                s = padOutString(si.getTypeName(), cts.getMaxNameLength() + 1) +
-                        padOutString(si.getReceiveLoadName(), cls.getMaxNameLength() + 1) +
-                        padOutString(si.getShipLoadName(), cls.getMaxNameLength() + 1) +
-                        padOutString(si.getDestinationName(), lmanager.getMaxLocationNameLength() + 1) +
+                s = padAndTruncate(si.getTypeName(), cts.getMaxNameLength() + 1) +
+                        padAndTruncate(si.getReceiveLoadName(), loadNameLength) +
+                        padAndTruncate(si.getShipLoadName(), loadNameLength) +
+                        padAndTruncate(si.getDestinationName(), locationNameLength) +
                         si.getDestinationTrackName() +
                         NEW_LINE;
                 writer.write(s);
 
-                s = padOutString("", cts.getMaxNameLength() + 1) +
-                        padOutString(Bundle.getMessage("Random"), Bundle.getMessage("Random").length() + 1) +
-                        padOutString(Bundle.getMessage("Delivery"), Bundle.getMessage("Delivery").length() + 1) +
-                        padOutString(Bundle.getMessage("Road"), crs.getMaxNameLength() + 1) +
-                        padOutString(Bundle.getMessage("Pickup"), Bundle.getMessage("Delivery").length() + 1) +
+                s = padAndTruncate("", cts.getMaxNameLength() + 1) +
+                        padAndTruncate(Bundle.getMessage("Random"), Bundle.getMessage("Random").length() + 1) +
+                        padAndTruncate(Bundle.getMessage("Delivery"), Bundle.getMessage("Delivery").length() + 1) +
+                        padAndTruncate(Bundle.getMessage("Road"), crs.getMaxNameLength() + 1) +
+                        padAndTruncate(Bundle.getMessage("Pickup"), Bundle.getMessage("Delivery").length() + 1) +
                         Bundle.getMessage("Wait") +
                         NEW_LINE;
                 writer.write(s);
 
-                s = padOutString("", cts.getMaxNameLength() + 1) +
-                        padOutString(si.getRandom(), Bundle.getMessage("Random").length() + 1) +
-                        padOutString(si.getSetoutTrainScheduleName(), Bundle.getMessage("Delivery").length() + 1) +
-                        padOutString(si.getRoadName(), crs.getMaxNameLength() + 1) +
-                        padOutString(si.getPickupTrainScheduleName(), Bundle.getMessage("Delivery").length() + 1) +
+                s = padAndTruncate("", cts.getMaxNameLength() + 1) +
+                        padAndTruncate(si.getRandom(), Bundle.getMessage("Random").length() + 1) +
+                        padAndTruncate(si.getSetoutTrainScheduleName(), Bundle.getMessage("Delivery").length() + 1) +
+                        padAndTruncate(si.getRoadName(), crs.getMaxNameLength() + 1) +
+                        padAndTruncate(si.getPickupTrainScheduleName(), Bundle.getMessage("Delivery").length() + 1) +
                         si.getWait() +
                         NEW_LINE;
                 writer.write(s);
@@ -655,7 +672,7 @@ public class PrintLocationsFrame extends OperationsFrame {
 
     private String getTrackString(Track track) {
         String s = TAB +
-                padOutString(track.getName(), Control.max_len_string_track_name) +
+                padAndTruncate(track.getName(), Control.max_len_string_track_name) +
                 " " +
                 Integer.toString(track.getLength()) +
                 TAB +
@@ -702,7 +719,7 @@ public class PrintLocationsFrame extends OperationsFrame {
                         track.getName() +
                         getDirection(location.getTrainDirections() & track.getTrainDirections());
                 writer.write(s);
-                isAlternate(track);
+                printIsAlternate(track);
                 writer.write(getTrackCarTypes(track));
                 writer.write(getTrackEngineTypes(track));
                 writer.write(getTrackRoads(track));
@@ -716,6 +733,7 @@ public class PrintLocationsFrame extends OperationsFrame {
                 writer.write(getSpurInfo(track));
                 writer.write(getSchedule(track));
                 writer.write(getStagingInfo(track));
+                printIsQuickService(track);
                 writer.write(NEW_LINE);
             } catch (IOException we) {
                 log.error("Error printing PrintLocationAction: {}", we.getLocalizedMessage());
@@ -1100,9 +1118,15 @@ public class PrintLocationsFrame extends OperationsFrame {
         return buf.toString();
     }
 
-    private void isAlternate(Track track) throws IOException {
+    private void printIsAlternate(Track track) throws IOException {
         if (track.isAlternate()) {
             writer.write(TAB + TAB + Bundle.getMessage("AlternateTrack") + NEW_LINE);
+        }
+    }
+
+    private void printIsQuickService(Track track) throws IOException {
+        if (track.isQuickServiceEnabled()) {
+            writer.write(TAB + TAB + Bundle.getMessage("QuickService") + NEW_LINE);
         }
     }
 
@@ -1165,9 +1189,9 @@ public class PrintLocationsFrame extends OperationsFrame {
         return buf.toString();
     }
 
-    private String padOutString(String s, int length) {
+    private String padAndTruncate(String s, int length) {
         return TrainCommon.padAndTruncate(s, length);
     }
 
-    private final static Logger log = LoggerFactory.getLogger(PrintLocationsFrame.class);
+    private static final Logger log = LoggerFactory.getLogger(PrintLocationsFrame.class);
 }

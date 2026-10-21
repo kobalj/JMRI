@@ -3,9 +3,6 @@ package jmri.jmrit.operations.rollingstock.engines;
 import java.beans.PropertyChangeEvent;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jmri.InstanceManager;
 import jmri.jmrit.operations.locations.Location;
 import jmri.jmrit.operations.locations.Track;
@@ -15,10 +12,13 @@ import jmri.jmrit.operations.trains.Train;
 import jmri.jmrit.roster.Roster;
 import jmri.jmrit.roster.RosterEntry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Represents a locomotive on the layout
  *
- * @author Daniel Boudreau (C) Copyright 2008
+ * @author Daniel Boudreau (C) Copyright 2008, 2026
  */
 public class Engine extends RollingStock {
 
@@ -30,13 +30,25 @@ public class Engine extends RollingStock {
     private String _model = NONE;
 
     EngineModels engineModels = InstanceManager.getDefault(EngineModels.class);
+    
+    public Engine() {
+        super();
+    }
 
     public Engine(String road, String number) {
         super(road, number);
         log.debug("New engine ({} {})", road, number);
-        addPropertyChangeListeners();
     }
 
+    @Override
+    public Engine copy() {
+        Engine eng = new Engine();
+        super.copy(eng);
+        eng.setModel(getModel());
+        eng.setBunit(isBunit());
+        return eng;
+    }
+    
     /**
      * Set the locomotive's model. Note a model has only one length, type, and
      * horsepower rating.
@@ -94,7 +106,7 @@ public class Engine extends RollingStock {
         String old = getHp();
         engineModels.setModelHorsepower(getModel(), hp);
         if (!old.equals(hp)) {
-            setDirtyAndFirePropertyChange(HP_CHANGED_PROPERTY, old, hp); // NOI18N
+            setDirtyAndFirePropertyChange(HP_CHANGED_PROPERTY, old, hp);
         }
     }
 
@@ -324,6 +336,26 @@ public class Engine extends RollingStock {
     public String checkDestination(Location destination, Track track) {
         return super.checkDestination(destination, track);
     }
+    
+    @Override
+    public String setDestination(Location destination, Track track, boolean force) {
+        String destinationName = getDestinationName();
+        String status = super.setDestination(destination, track, force);
+        // return if not Okay
+        if (!status.equals(Track.OKAY)) {
+            return status;
+        }
+        if (destinationName.equals(NONE) || (destination != null) || getTrain() == null) {
+            return status;
+        }
+        // engine clone was in a train and has been dropped off
+        if (isClone()) {
+            // destroy clone
+            InstanceManager.getDefault(ConsistManager.class).deleteConsist(getConsistName());
+            InstanceManager.getDefault(EngineManager.class).deregister(this);
+        }
+        return status;
+    }
 
     /**
      * Determine if there's a change in the lead locomotive. There are two
@@ -353,12 +385,43 @@ public class Engine extends RollingStock {
         }
         super.moveRollingStock(current, next);
     }
+    
+    @Override
+    public void reset() {
+        super.reset();
+        destroyClone();
+    }
+    
+    /*
+     * This routine destroys the clone and restores the cloned car to its
+     * original location and load. Note there can be multiple clones for a car.
+     * Only the first clone created has the right info. A clone has creation
+     * order number appended to the road number.
+     */
+    private void destroyClone() {
+        if (isClone()) {
+            // move cloned engine back to original location
+            EngineManager engineManager = InstanceManager.getDefault(EngineManager.class);
+            String[] number = getNumber().split(Engine.CLONE_REGEX);
+            Engine engine = engineManager.getByRoadAndNumber(getRoadName(), number[0]);
+            if (engine != null) {
+                int cloneCreationNumber = Integer.parseInt(number[1]);
+                if (cloneCreationNumber <= engine.getCloneOrder()) {
+                    destroyCloneReset(engine);
+                    // remember the last clone destroyed
+                    engine.setCloneOrder(cloneCreationNumber);
+                }
+            } else {
+                log.error("Not able to find and restore loco ({}, {})", getRoadName(), number[0]);
+            }
+            InstanceManager.getDefault(ConsistManager.class).deleteConsist(getConsistName());
+            engineManager.deregister(this);
+        }
+    }
 
     @Override
     public void dispose() {
         setConsist(null);
-        InstanceManager.getDefault(EngineTypes.class).removePropertyChangeListener(this);
-        InstanceManager.getDefault(EngineLengths.class).removePropertyChangeListener(this);
         super.dispose();
     }
 
@@ -404,7 +467,6 @@ public class Engine extends RollingStock {
                 log.error("Consist {} does not exist", a.getValue());
             }
         }
-        addPropertyChangeListeners();
     }
 
     boolean verboseStore = false;
@@ -441,9 +503,18 @@ public class Engine extends RollingStock {
         super.setDirtyAndFirePropertyChange(p, old, n);
     }
 
-    private void addPropertyChangeListeners() {
+    @Override
+    protected void addPropertyChangeListeners() {
         InstanceManager.getDefault(EngineTypes.class).addPropertyChangeListener(this);
         InstanceManager.getDefault(EngineLengths.class).addPropertyChangeListener(this);
+        super.addPropertyChangeListeners();
+    }
+    
+    @Override
+    protected void removePropertyChangeListeners() {
+        InstanceManager.getDefault(EngineTypes.class).removePropertyChangeListener(this);
+        InstanceManager.getDefault(EngineLengths.class).removePropertyChangeListener(this);
+        super.removePropertyChangeListeners();
     }
 
     @Override
@@ -465,6 +536,6 @@ public class Engine extends RollingStock {
         }
     }
 
-    private final static Logger log = LoggerFactory.getLogger(Engine.class);
+    private static final Logger log = LoggerFactory.getLogger(Engine.class);
 
 }

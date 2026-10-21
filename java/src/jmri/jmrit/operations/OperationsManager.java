@@ -27,7 +27,7 @@ public final class OperationsManager implements InstanceManagerAutoDefault, Inst
 
     private ShutDownTask shutDownTask = null;
 
-    static private final Logger log = LoggerFactory.getLogger(OperationsManager.class);
+    private static final Logger log = LoggerFactory.getLogger(OperationsManager.class);
 
     public OperationsManager() {
     }
@@ -125,7 +125,7 @@ public final class OperationsManager implements InstanceManagerAutoDefault, Inst
         // auto backup?
         if (Setup.isAutoBackupEnabled()) {
             try {
-                AutoBackup backup = new AutoBackup();
+                AutoBackup backup = InstanceManager.getDefault(AutoBackup.class);
                 backup.autoBackup();
             } catch (IOException ex) {
                 log.debug("Auto backup after enabling Auto Backup flag.", ex);

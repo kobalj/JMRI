@@ -3,11 +3,6 @@ package jmri.jmrit.operations.locations.gui;
 import java.awt.GraphicsEnvironment;
 import java.text.MessageFormat;
 
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.jupiter.api.Test;
-import org.netbeans.jemmy.operators.*;
-
 import jmri.InstanceManager;
 import jmri.jmrit.operations.OperationsTestCase;
 import jmri.jmrit.operations.locations.*;
@@ -20,6 +15,11 @@ import jmri.jmrit.operations.setup.Setup;
 import jmri.util.*;
 import jmri.util.swing.JemmyUtil;
 
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.jupiter.api.Test;
+import org.netbeans.jemmy.operators.*;
+
 /**
  * Tests for the Operations Locations GUI class
  *
@@ -27,7 +27,7 @@ import jmri.util.swing.JemmyUtil;
  */
 public class LocationEditFrameTest extends OperationsTestCase {
 
-    final static int ALL = Track.EAST + Track.WEST + Track.NORTH + Track.SOUTH;
+    static final int ALL = Track.EAST + Track.WEST + Track.NORTH + Track.SOUTH;
 
     @Test
     public void testAddTracks() {
@@ -171,8 +171,11 @@ public class LocationEditFrameTest extends OperationsTestCase {
         
         Car c1 = JUnitOperationsUtil.createAndPlaceCar("DB", "001", "Boxcar", "40", track, 0);
 
-        LocationEditFrame f = new LocationEditFrame(loc);
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         Assert.assertNotNull(f);
+        JemmyUtil.waitFor(f);
         
         JemmyUtil.enterClickAndLeaveThreadSafe(f.deleteLocationButton);
         // confirm delete dialog window should appear, try no
@@ -411,8 +414,11 @@ public class LocationEditFrameTest extends OperationsTestCase {
         Location loc = lManager.getLocationByName("North End Staging");
         Assert.assertNotNull(loc);
 
-        LocationEditFrame f = new LocationEditFrame(loc);
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         Assert.assertNotNull(f);
+        JemmyUtil.waitFor(f);
 
         JFrameOperator jfo = new JFrameOperator(f);
         JTableOperator tbl = new JTableOperator(jfo);
@@ -424,6 +430,7 @@ public class LocationEditFrameTest extends OperationsTestCase {
         }, "esf not null");
         JmriJFrame tef = JmriJFrame.getFrame(Bundle.getMessage("EditStaging", loc.getName()));
         Assert.assertNotNull(tef);
+        JemmyUtil.waitFor(tef);
 
         Track t = loc.getTracksList().get(0);
         Assert.assertNotNull(t);
@@ -452,8 +459,11 @@ public class LocationEditFrameTest extends OperationsTestCase {
         // turn on id column
         InstanceManager.getDefault(LocationManager.class).setShowIdEnabled(true);
 
-        LocationEditFrame f = new LocationEditFrame(loc);
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         Assert.assertNotNull(f);
+        JemmyUtil.waitFor(f);
         f.setSize(1200, f.getHeight()); // need full width
 
         JFrameOperator jfo = new JFrameOperator(f);
@@ -474,6 +484,7 @@ public class LocationEditFrameTest extends OperationsTestCase {
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("Dest")));
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("Ship")));
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("AbbrevationDirection")));
+        Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("Priority")));
         
         // confirm comment column is visible
         Assert.assertEquals("Column exists", 12, tbl.findColumn(Bundle.getMessage("Comment")));
@@ -603,9 +614,12 @@ public class LocationEditFrameTest extends OperationsTestCase {
         Assert.assertEquals("should be 1 locations", 1, lManager.getLocationsByNameList().size());
         Location loc = lManager.getLocationByName("Test Location");
         Assert.assertNotNull(loc);
-
-        LocationEditFrame f = new LocationEditFrame(loc);
+        
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         Assert.assertNotNull(f);
+        JemmyUtil.waitFor(f);
 
         JFrameOperator jfo = new JFrameOperator(f);
         JTableOperator tbl = new JTableOperator(jfo);
@@ -617,6 +631,7 @@ public class LocationEditFrameTest extends OperationsTestCase {
         }, "esf not null");
         JmriJFrame tef = JmriJFrame.getFrame(Bundle.getMessage("EditSpur", loc.getName()));
         Assert.assertNotNull(tef);
+        JemmyUtil.waitFor(tef);
 
         Track t = loc.getTrackByName("Test Location Spur 2", null);
         Assert.assertNotNull(t);
@@ -645,8 +660,11 @@ public class LocationEditFrameTest extends OperationsTestCase {
         // add a 3rd track for coverage
         Track track3 = loc.addTrack("Test Location Spur 3", Track.SPUR);
 
-        LocationEditFrame f = new LocationEditFrame(loc);
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         Assert.assertNotNull(f);
+        JemmyUtil.waitFor(f);
         f.setSize(1500, f.getHeight()); // need full width
 
         JFrameOperator jfo = new JFrameOperator(f);
@@ -667,6 +685,8 @@ public class LocationEditFrameTest extends OperationsTestCase {
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("Routed")));
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("AbbrevationDirection")));
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("AlternateTrack")));
+        Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("QuickService")));
+        Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("Priority")));
         
         // add track moves column
         Setup.setShowTrackMovesEnabled(true);
@@ -735,7 +755,18 @@ public class LocationEditFrameTest extends OperationsTestCase {
 
         // column should disappear
         Assert.assertEquals("Confirm number of columns", 18, tbl.getColumnCount());
-        Assert.assertEquals("Column exists", -1, tbl.findColumn(Bundle.getMessage("DisableLoadChange")));
+        Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("DisableLoadChange")));
+
+        // test quick load change
+        track.setQuickServiceEnabled(true);
+        Assert.assertEquals("Confirm number of columns", 19, tbl.getColumnCount());
+        Assert.assertEquals("Column exists", 13, tbl.findColumn(Bundle.getMessage("QuickService")));
+        tbl.clickOnCell(0, tbl.findColumn(Bundle.getMessage("QuickService")));
+        Assert.assertFalse("quick load change", track.isQuickServiceEnabled());
+
+        // column should disappear
+        Assert.assertEquals("Confirm number of columns", 18, tbl.getColumnCount());
+        Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("QuickService")));
 
         // test track directions
         track.setTrainDirections(Track.EAST);
@@ -753,6 +784,11 @@ public class LocationEditFrameTest extends OperationsTestCase {
         track3.setLength(124);
         Assert.assertEquals("new length", 124, tbl.getValueAt(2, tbl.findColumn(Bundle.getMessage("Length"))));
         
+        // test track priority
+        track.setTrackPriority(Track.PRIORITY_HIGH);
+        Assert.assertEquals("Confirm number of columns", 18, tbl.getColumnCount());
+        Assert.assertEquals("Column exists", 15, tbl.findColumn(Bundle.getMessage("Priority")));
+
         // test adding a new track
         loc.addTrack("Test Location Spur 4", Track.SPUR);
         Assert.assertEquals("Confirm number of rows", 4, tbl.getRowCount());
@@ -769,9 +805,13 @@ public class LocationEditFrameTest extends OperationsTestCase {
         Assert.assertEquals("should be 1 locations", 1, lManager.getLocationsByNameList().size());
         Location loc = lManager.getLocationByName("Test Location");
         Assert.assertNotNull(loc);
+        
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
 
-        LocationEditFrame f = new LocationEditFrame(loc);
         Assert.assertNotNull(f);
+        JemmyUtil.waitFor(f);
 
         JemmyUtil.enterClickAndLeave(f.interchangeRadioButton);
 
@@ -785,6 +825,7 @@ public class LocationEditFrameTest extends OperationsTestCase {
         }, "esf not null");
         JmriJFrame tef = JmriJFrame.getFrame(Bundle.getMessage("EditInterchange", loc.getName()));
         Assert.assertNotNull(tef);
+        JemmyUtil.waitFor(tef);
 
         Track t = loc.getTrackByName("Test Location Interchange 2", null);
         Assert.assertNotNull(t);
@@ -810,11 +851,15 @@ public class LocationEditFrameTest extends OperationsTestCase {
         // turn on id column
         InstanceManager.getDefault(LocationManager.class).setShowIdEnabled(true);
 
-        LocationEditFrame f = new LocationEditFrame(loc);
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         Assert.assertNotNull(f);
-        JemmyUtil.enterClickAndLeave(f.interchangeRadioButton);
+        JemmyUtil.waitFor(f);
         f.setSize(1200, f.getHeight()); // need full width
-
+        
+        JemmyUtil.enterClickAndLeave(f.interchangeRadioButton);
+        
         JFrameOperator jfo = new JFrameOperator(f);
         JTableOperator tbl = new JTableOperator(jfo);
 
@@ -830,6 +875,7 @@ public class LocationEditFrameTest extends OperationsTestCase {
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("PlanPickUp")));
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("Dest")));
         Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("AbbrevationDirection")));
+        Assert.assertEquals("Column doesn't exist", -1, tbl.findColumn(Bundle.getMessage("Priority")));
                
         // add track moves column
         Setup.setShowTrackMovesEnabled(true);
@@ -886,6 +932,11 @@ public class LocationEditFrameTest extends OperationsTestCase {
         Assert.assertEquals("Confirm number of columns", 19, tbl.getColumnCount());
         Assert.assertEquals("Column exists", 13, tbl.findColumn(Bundle.getMessage("Dest")));
 
+        // test track priority
+        track.setTrackPriority(Track.PRIORITY_HIGH);
+        Assert.assertEquals("Confirm number of columns", 20, tbl.getColumnCount());
+        Assert.assertEquals("Column exists", 17, tbl.findColumn(Bundle.getMessage("Priority")));
+
         JUnitUtil.dispose(f);
     }
 
@@ -899,8 +950,11 @@ public class LocationEditFrameTest extends OperationsTestCase {
         Location loc = lManager.getLocationByName("Test Location");
         Assert.assertNotNull(loc);
 
-        LocationEditFrame f = new LocationEditFrame(loc);
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         Assert.assertNotNull(f);
+        JemmyUtil.waitFor(f);
 
         JemmyUtil.enterClickAndLeave(f.yardRadioButton);
 
@@ -914,6 +968,7 @@ public class LocationEditFrameTest extends OperationsTestCase {
         }, "esf not null");
         JmriJFrame tef = JmriJFrame.getFrame(Bundle.getMessage("EditYard", loc.getName()));
         Assert.assertNotNull(tef);
+        JemmyUtil.waitFor(tef);
 
         Track t = loc.getTrackByName("Test Location Yard 2", null);
         Assert.assertNotNull(t);
@@ -942,8 +997,11 @@ public class LocationEditFrameTest extends OperationsTestCase {
 
         Track test = loc.addTrack("Test Spur", Track.SPUR);
 
-        LocationEditFrame f = new LocationEditFrame(loc);
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         Assert.assertNotNull(f);
+        JemmyUtil.waitFor(f);
         f.setSize(1200, f.getHeight()); // need full width
 
         JFrameOperator jfo = new JFrameOperator(f);
@@ -975,6 +1033,7 @@ public class LocationEditFrameTest extends OperationsTestCase {
         }, "esf not null");
         JmriJFrame tef = JmriJFrame.getFrame("Test Location Spur 2");
         Assert.assertNotNull(tef);
+        JemmyUtil.waitFor(tef);
 
         test.setCommentSetout("");
         Assert.assertEquals("Confirm number of columns", 9, tbl.getColumnCount());
@@ -987,7 +1046,9 @@ public class LocationEditFrameTest extends OperationsTestCase {
     public void testCloseWindowOnSave() {
         Assume.assumeFalse(GraphicsEnvironment.isHeadless());
         Location loc = JUnitOperationsUtil.createOneNormalLocation("Test Location");
-        LocationEditFrame f = new LocationEditFrame(loc);
+        LocationEditFrame f = ThreadingUtil.runOnGUIwithReturn(() -> {
+            return new LocationEditFrame(loc);
+        });
         JUnitOperationsUtil.testCloseWindowOnSave(f.getTitle());
     }
 }

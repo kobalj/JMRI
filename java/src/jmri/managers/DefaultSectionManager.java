@@ -327,6 +327,57 @@ public class DefaultSectionManager extends AbstractManager<Section> implements j
      * @param layoutBlock The starting layout block.
      */
     private void createBlockSection(LayoutBlock layoutBlock){
+        // Do not generate block sections for turntable components (the turntable block or ray blocks)
+        // as these are not standard stub-end sidings.
+        boolean isTurntableComponent = false;
+        for (LayoutEditor panel : InstanceManager.getDefault(EditorManager.class).getAll(LayoutEditor.class)) {
+            for (jmri.jmrit.display.layoutEditor.LayoutTurntable turntable : panel.getLayoutTurntables()) {
+                if (turntable.getLayoutBlock() == layoutBlock) {
+                    isTurntableComponent = true;
+                    break;
+                }
+                for (jmri.jmrit.display.layoutEditor.LayoutTurntable.RayTrack ray : turntable.getRayTrackList()) {
+                    if (ray.getConnect() != null && ray.getConnect().getLayoutBlock() == layoutBlock) {
+                        isTurntableComponent = true;
+                        break;
+                    }
+                }
+                if (isTurntableComponent) break;
+            }
+            if (isTurntableComponent) break;
+        }
+        if (isTurntableComponent) {
+            return; // Skip creating a section for this block
+        }
+
+        boolean isTraverserComponent = false;
+        for (LayoutEditor panel : InstanceManager.getDefault(EditorManager.class).getAll(LayoutEditor.class)) {
+            for (jmri.jmrit.display.layoutEditor.LayoutTraverser traverser : panel.getLayoutTraversers()) {
+                if (traverser.getLayoutBlock() == layoutBlock) {
+                    isTraverserComponent = true;
+                    break;
+                }
+                for (jmri.jmrit.display.layoutEditor.LayoutTraverser.SlotTrack slot : traverser.getSlotList()) {
+//                    log.info("slot {}", slot);
+                    if (!slot.isDisabled() && slot.getConnect() != null) {
+                        jmri.jmrit.display.layoutEditor.LayoutBlock connectedBlock = slot.getConnect().getLayoutBlock();
+                        if (connectedBlock != null) {
+                            log.debug("slot {} connected block {} ", slot, connectedBlock.getDisplayName());
+                            if (connectedBlock == layoutBlock) {
+                                isTraverserComponent = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (isTraverserComponent) break;
+            }
+            if (isTraverserComponent) break;
+        }
+        if (isTraverserComponent) {
+            return; // Skip creating a section for this block
+        }
+        
         blockList = new ArrayList<>();
         var block = layoutBlock.getBlock();
         createSectionBlockList(block);
@@ -345,6 +396,7 @@ public class DefaultSectionManager extends AbstractManager<Section> implements j
         Section section;
         try {
             section = createNewSection(sectionName);
+            log.debug("created section '{}' for layout block '{}'", sectionName, layoutBlock.getDisplayName());
         }
         catch (IllegalArgumentException ex){
             log.error("Could not create Section for layout block '{}'",layoutBlock.getDisplayName());
@@ -412,8 +464,11 @@ public class DefaultSectionManager extends AbstractManager<Section> implements j
 
         // If the current block is a SML facing block, the next block is not needed.
         for (jmri.SignalMastLogic sml : smlManager.getSignalMastLogicList()) {
-            if (sml.getFacingBlock().equals(layoutBlock)) {
-                return null;
+            // should not occur, but sometimes a sml has a null entry point (does not show up in sml table)
+            if (sml.getFacingBlock() != null) {
+                if (sml.getFacingBlock().equals(layoutBlock)) {
+                    return null;
+                }
             }
         }
 

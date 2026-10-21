@@ -22,19 +22,19 @@ public class EngineRosterMenu extends JMenu {
      * main menu of the program, away from any GUI that can select or use a
      * RosterEntry.
      */
-    static public final int MAINMENU = 1;
+    public static final int MAINMENU = 1;
 
     /**
      * Ctor argument defining that the menu object will be used as a menu on a
      * GUI object that can select a RosterEntry.
      */
-    static public final int SELECTMENU = 2;
+    public static final int SELECTMENU = 2;
 
     /**
      * Ctor argument defining that the menu object will be used as a menu on a
      * GUI object that is dealing with a single RosterEntry.
      */
-    static public final int ENTRYMENU = 3;
+    public static final int ENTRYMENU = 3;
 
     /**
      * Creates a roster menu for locomotives.
@@ -50,16 +50,17 @@ public class EngineRosterMenu extends JMenu {
 
         // create the menu
         AbstractAction importRosterAction = new ImportRosterEngineAction();
-        AbstractAction exportAction = new ExportEngineRosterAction();
+        AbstractAction exportAction = new ExportEngineRosterAction(pWho);
         AbstractAction importAction = new ImportEngineAction();
-        AbstractAction deleteAction = new DeleteEngineRosterAction();
-        AbstractAction resetMovesAction = new ResetEngineMovesAction();
+        AbstractAction deleteAction = new DeleteEngineRosterAction(pWho);
+        AbstractAction resetMovesAction = new ResetEngineMovesAction(pWho);
         AbstractAction printAction = new PrintEngineRosterAction(false, pWho);
         AbstractAction previewAction = new PrintEngineRosterAction(true, pWho);
 
         add(importRosterAction);
         add(importAction);
         add(exportAction);
+        addSeparator();
         add(deleteAction);
         add(resetMovesAction);
         addSeparator();
@@ -78,6 +79,6 @@ public class EngineRosterMenu extends JMenu {
     }
 
     // initialize logging
-    private final static Logger log = LoggerFactory.getLogger(EngineRosterMenu.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(EngineRosterMenu.class.getName());
 
 }

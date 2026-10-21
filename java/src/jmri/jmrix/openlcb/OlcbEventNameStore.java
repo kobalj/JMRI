@@ -11,11 +11,11 @@ import org.openlcb.EventID;
 import org.openlcb.EventNameStore;
 
 /**
- * JMRI's implementation of part of the OpenLcb EventNameStore interface.
+ * JMRI's implementation of part of the OpenLcb {@link org.openlcb.EventNameStore} interface.
  *
  * @author Bob Jacobsen Copyright (C) 2024
  */
-public final class OlcbEventNameStore implements EventNameStore {
+public class OlcbEventNameStore implements EventNameStore { // not final for testing
 
     public OlcbEventNameStore() {
 
@@ -24,14 +24,15 @@ public final class OlcbEventNameStore implements EventNameStore {
         initShutdownTask();
     }
 
-    private Map<String, EventID> nameToId = new HashMap<String, EventID>();
-    private Map<EventID, String> idToName = new HashMap<EventID, String>();
+    private final Map<String, EventID> nameToId = new HashMap<>();
+    private final Map<EventID, String> idToName = new HashMap<>();
     public boolean dirty = false;
-            
+
     /**
      * @param eventID The EventID being searched for
      * @return The name associated with that EventID or the event ID in dotted hex
      */
+    @Override
     public String getEventName(EventID eventID) {
         var name = idToName.get(eventID);
         if (name == null || name.isEmpty()) return eventID.toShortString();
@@ -52,12 +53,13 @@ public final class OlcbEventNameStore implements EventNameStore {
      * @param name The event name being searched for
      * @return The EventID associated with that name or an event ID constructed from the input
      */
+    @Override
     public EventID getEventID(String name) {
         var eid = nameToId.get(name);
         if (eid == null) return new EventID(name);
         return eid;    
     }
-        
+
     /**
      * @param name The event name being searched for
      * @return true if an EventID is associated with that name
@@ -67,7 +69,7 @@ public final class OlcbEventNameStore implements EventNameStore {
         if (eid == null) return false;
         return true;    
     }
-        
+
     /**
      * Create a new name to/from EventID association
      * @param eventID associated EventID
@@ -79,7 +81,7 @@ public final class OlcbEventNameStore implements EventNameStore {
         log.trace("setting dirty true");
         dirty = true;
     }
-    
+
     /**
      * Get all the EventIDs available
      * @return Set of all available EventIDs
@@ -90,7 +92,7 @@ public final class OlcbEventNameStore implements EventNameStore {
 
     public void readDetails() {
         log.debug("reading Event Name Details");
-        new OlcbEventNameStoreXml(this,"EventNames.xml").load();  // NOI18N
+        new OlcbEventNameStoreXml(this).load();  // NOI18N
         log.debug("...done reading Event Name details");
     }
 
@@ -113,16 +115,26 @@ public final class OlcbEventNameStore implements EventNameStore {
         }
     }
 
+    /**
+     * De-register the Shutdown task.
+     */
+    public void deregisterShutdownTask(){
+        log.debug("Deregister ShutDown task");
+        if ( shutDownTask != null ) {
+            InstanceManager.getDefault(ShutDownManager.class).deregister(shutDownTask);
+        }
+    }
+
     public void writeEventNameDetails() throws java.io.IOException {
         log.debug("storing event name map {}", dirty);
         if (this.dirty) {
-            new OlcbEventNameStoreXml(this,"EventNames.xml").store();  // NOI18N
+            new OlcbEventNameStoreXml(this).store();  // NOI18N
             this.dirty = false;
             log.debug("...done writing event name details");
         }
     }
 
 
-    private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OlcbEventNameStore.class);
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OlcbEventNameStore.class);
 
 }

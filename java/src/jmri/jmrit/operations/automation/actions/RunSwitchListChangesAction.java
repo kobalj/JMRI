@@ -52,7 +52,7 @@ public class RunSwitchListChangesAction extends Action {
                 return;
             }
             // we do need one of these!
-            if (!InstanceManager.getDefault(TrainCustomSwitchList.class).excelFileExists()) {
+            if (!InstanceManager.getDefault(TrainCustomSwitchList.class).doesExcelFileExist()) {
                 log.warn("Manifest creator file not found!, directory name: {}, file name: {}",
                         InstanceManager.getDefault(TrainCustomSwitchList.class).getDirectoryName(),
                         InstanceManager.getDefault(TrainCustomSwitchList.class).getFileName());
@@ -121,6 +121,6 @@ public class RunSwitchListChangesAction extends Action {
         // no cancel for this action
     }
 
-    private final static Logger log = LoggerFactory.getLogger(RunSwitchListChangesAction.class);
+    private static final Logger log = LoggerFactory.getLogger(RunSwitchListChangesAction.class);
 
 }

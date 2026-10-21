@@ -12,7 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
-import javax.swing.text.DefaultFormatter;
 
 import jmri.jmrix.can.CanListener;
 import jmri.jmrix.can.CanMessage;
@@ -24,6 +23,7 @@ import jmri.jmrix.can.cbus.CbusPreferences;
 import jmri.jmrix.can.cbus.CbusSend;
 import jmri.util.TimerUtil;
 import jmri.util.swing.JmriJOptionPane;
+import jmri.util.swing.JSpinnerUtil;
 
 public class CbusAllocateNodeNumber implements CanListener {
 
@@ -132,6 +132,12 @@ public class CbusAllocateNodeNumber implements CanListener {
             baseNodeNum = newval;
             setSendSNNTimeout();
             send.nodeSetNodeNumber(newval);
+        } else {
+            // cancelled, discard any parameters / name received from the node in setup
+            // so they cannot be applied to a different node later.
+            _paramsArr = null;
+            _tempNodeName = "";
+            WAITING_RESPONSE_NAME = false;
         }
         NODE_NUM_DIALOGUE_OPEN=false;
         WAITINGRESPONSE_RQNN_PARAMS=false;
@@ -144,10 +150,9 @@ public class CbusAllocateNodeNumber implements CanListener {
 
         JSpinner.NumberEditor editor = new JSpinner.NumberEditor(rqnnSpinner, "#");
         rqnnSpinner.setEditor(editor);
+        JSpinnerUtil.setCommitsOnValidEdit(rqnnSpinner, true);
 
         JFormattedTextField rqfield = (JFormattedTextField) editor.getComponent(0);
-        DefaultFormatter rqformatter = (DefaultFormatter) rqfield.getFormatter();
-        rqformatter.setCommitsOnValidEdit(true);
         rqfield.setBackground(Color.white);
         rqnnSpinner.addChangeListener((ChangeEvent e) -> {
             int newval = (Integer) rqnnSpinner.getValue();
@@ -241,28 +246,66 @@ public class CbusAllocateNodeNumber implements CanListener {
                 processNodeParams(m);
                 break;
             case CbusConstants.CBUS_NNACK: // node number acknowledge
-                clearSendSNNTimeout();
-                // if nodes are allowed to be added to node table, add.
-                // this is done here so any known parameters can be passed directly rather than re-requested
-                if ( _memo.get(CbusPreferences.class).getAddNodes() ) {
-                    int nodeNum = m.getElement(1) * 256 + m.getElement(2);
-                    nodeModel.setRequestNodeDisplay(nodeNum);
-                    // provide will add to table
-                    CbusNode nd = nodeModel.provideNodeByNodeNum( nodeNum );
-                    nd.getCanListener().setParamsFromSetup(_paramsArr);
-                    nd.setNodeNameFromName(_tempNodeName);
-                    nd.resetNodeAll();
-                    nodeModel.startUrgentFetch();
-                    nodeModel.setRequestNodeDisplay(-1);
-                    send.searchForCommandStations();
-                }
-                _paramsArr = null;
+                processNodeNumberAck(m);
                 break;
             case CbusConstants.CBUS_NAME:
                 processNodeName(m);
                 break;
             default:
                 break;
+        }
+    }
+
+    /**
+     * Process a Node Number Acknowledge.
+     * <p>
+     * A Node sends NNACK in response to a SNN ( Set Node Number ),
+     * and also in response to an ENUM ( CAN ID self enumeration ) request.
+     * <p>
+     * Only when the NNACK is in response to a SNN sent from here, ie. the SNN timer
+     * is running and the Node Number matches, are the parameters and name obtained
+     * from the Node in setup applied and the node reset for a full re-fetch.
+     * <p>
+     * An NNACK for a node not in the node table, eg. a Node Number set by other software,
+     * adds the node to the table if enabled in preferences.
+     * An NNACK from a node already in the table is otherwise ignored here,
+     * the node CAN listener handles the ENUM response.
+     *
+     * @param m the NNACK CanReply
+     */
+    private void processNodeNumberAck(CanReply m) {
+        int nodeNum = m.getElement(1) * 256 + m.getElement(2);
+        boolean snnAcknowledged = ( sendSNNTask != null && nodeNum == baseNodeNum );
+        if ( snnAcknowledged ) {
+            clearSendSNNTimeout();
+        }
+        // if nodes are allowed to be added to node table, add.
+        // this is done here so any known parameters can be passed directly rather than re-requested
+        if ( _memo.get(CbusPreferences.class).getAddNodes() ) {
+            if ( snnAcknowledged ) {
+                nodeModel.setRequestNodeDisplay(nodeNum);
+                // provide will add to table
+                CbusNode nd = nodeModel.provideNodeByNodeNum( nodeNum );
+                nd.getCanListener().setParamsFromSetup(_paramsArr);
+                nd.setNodeNameFromName(_tempNodeName);
+                nd.resetNodeAll();
+                nodeModel.startUrgentFetch();
+                nodeModel.setRequestNodeDisplay(-1);
+                send.searchForCommandStations();
+            } else if ( nodeModel.getNodeByNodeNum( nodeNum ) == null ) {
+                // node number not set by us, eg. by other software, add to table.
+                // setup parameters are not applied as they may be from a different node.
+                log.debug("NNACK from node {} not in table, adding", nodeNum);
+                nodeModel.provideNodeByNodeNum( nodeNum );
+                nodeModel.startUrgentFetch();
+                send.searchForCommandStations();
+            } else {
+                log.debug("NNACK from existing node {}, not in response to SNN, ignored", nodeNum);
+            }
+        }
+        if ( snnAcknowledged ) {
+            _paramsArr = null;
+            _tempNodeName = "";
         }
     }
 
@@ -305,11 +348,15 @@ public class CbusAllocateNodeNumber implements CanListener {
             _tempNodeName = rval.toString().trim();
 
             StringBuilder nodepropbuilder = new StringBuilder(40);
-            nodepropbuilder.append (CbusNodeConstants.getManu( _paramsArr[0] ));
-            nodepropbuilder.append (" ");
+            if ( _paramsArr != null ) {
+                nodepropbuilder.append (CbusNodeConstants.getManu( _paramsArr[0] ));
+                nodepropbuilder.append (" ");
+            }
             nodepropbuilder.append (_tempNodeName);
 
-            rqNNtext.setText(nodepropbuilder.toString());
+            if ( rqNNtext != null ) {
+                rqNNtext.setText(nodepropbuilder.toString());
+            }
         }
     }
 

@@ -6,8 +6,6 @@ import jmri.DccLocoAddress;
 import jmri.InstanceManager;
 import jmri.RailCom;
 import jmri.RailComManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Z21CanReporter implements the Reporter Manager interface
@@ -53,6 +51,14 @@ public class Z21CanReporter extends jmri.implementation.AbstractRailComReporter 
         //leave commented out for now, causing loop that needs investigation.
         //   _memo.getTrafficController().sendz21Message(Z21Message.getLanCanDetector(networkID),this);
         //}
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasExitReports() {
+        return true;
     }
 
     private void setIdentifiersFromSystemName(String systemName){
@@ -132,13 +138,13 @@ public class Z21CanReporter extends jmri.implementation.AbstractRailComReporter 
           int direction = (0xC000&value);
           switch (direction) {
              case 0x8000:
-                tag.setOrientation(RailCom.ORIENTA);
+                tag.setOrientation(RailCom.Orientation.EAST);
                 break;
              case 0xC000:
-                tag.setOrientation(RailCom.ORIENTB);
+                tag.setOrientation(RailCom.Orientation.WEST);
                 break;
              default:
-                tag.setOrientation(0);
+                tag.setOrientation(RailCom.Orientation.UNKNOWN);
           }
           return tag;
        }
@@ -162,6 +168,6 @@ public class Z21CanReporter extends jmri.implementation.AbstractRailComReporter 
         return idTags;
     }
 
-    private static final Logger log = LoggerFactory.getLogger(Z21CanReporter.class);
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Z21CanReporter.class);
 
 }

@@ -136,7 +136,8 @@ public class PrintEngineRosterFrame extends OperationsFrame {
 
         // obtain a HardcopyWriter to do this
         try (HardcopyWriter writer = new HardcopyWriter(new Frame(), Bundle.getMessage("TitleEngineRoster"),
-                fontSize, .5, .5, .5, .5, _isPreview, "", isLandscape, true, null, null);) {
+                null, null, fontSize, .5 * 72, .5 * 72, .5 * 72, .5 * 72, _isPreview, "", isLandscape, true, null,
+                null)) {
 
             numberCharPerLine = writer.getCharactersPerLine();
 
@@ -145,12 +146,10 @@ public class PrintEngineRosterFrame extends OperationsFrame {
 
             printRoster(writer);
 
-            // and force completion of the printing
-            writer.close();
         } catch (IOException we) {
             log.error("Error printing ConsistRosterEntry: {}", we.getLocalizedMessage());
         } catch (HardcopyWriter.PrintCanceledException ex) {
-            log.debug("Print cancelled");
+            log.debug("Print canceled");
         }
     }
 
@@ -310,5 +309,5 @@ public class PrintEngineRosterFrame extends OperationsFrame {
         return TrainCommon.padAndTruncate(attribute, length) + TrainCommon.SPACE;
     }
 
-    private final static Logger log = LoggerFactory.getLogger(PrintEngineRosterFrame.class);
+    private static final Logger log = LoggerFactory.getLogger(PrintEngineRosterFrame.class);
 }

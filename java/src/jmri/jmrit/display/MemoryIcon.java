@@ -23,8 +23,8 @@ import jmri.NamedBean.DisplayOptions;
 import jmri.jmrit.catalog.NamedIcon;
 import jmri.jmrit.roster.RosterEntry;
 import jmri.jmrit.roster.RosterIconFactory;
-import jmri.jmrit.throttle.ThrottleFrame;
 import jmri.jmrit.throttle.ThrottleFrameManager;
+import jmri.jmrit.throttle.interfaces.ThrottleControllerUI;
 import jmri.util.datatransfer.RosterEntrySelection;
 import jmri.util.swing.JmriJOptionPane;
 import jmri.util.swing.JmriMouseEvent;
@@ -237,9 +237,9 @@ public class MemoryIcon extends MemoryOrGVIcon implements java.beans.PropertyCha
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    ThrottleFrame tf = InstanceManager.getDefault(ThrottleFrameManager.class).createThrottleFrame();
+                    ThrottleControllerUI tf = InstanceManager.getDefault(ThrottleFrameManager.class).createThrottleFrame();
                     tf.toFront();
-                    tf.getAddressPanel().setRosterEntry(re);
+                    tf.setRosterEntry(re);
                 }
             });
             //don't like the idea of refering specifically to the layout block manager for this, but it has to be done if we are to allow the panel editor to also assign trains to block, when used with a layouteditor
@@ -456,8 +456,10 @@ public class MemoryIcon extends MemoryOrGVIcon implements java.beans.PropertyCha
             if (flipRosterIcon) {
                 flipIcon(NamedIcon.HORIZONTALFLIP);
             }
-            jmri.InstanceManager.throttleManagerInstance().attachListener(re.getDccLocoAddress(), this);
-            Object isForward = jmri.InstanceManager.throttleManagerInstance().getThrottleInfo(re.getDccLocoAddress(), jmri.Throttle.ISFORWARD);
+            // use the roster parameter, not the re field: displayState() can clear
+            // re from another thread between the assignment above and here
+            jmri.InstanceManager.throttleManagerInstance().attachListener(roster.getDccLocoAddress(), this);
+            Object isForward = jmri.InstanceManager.throttleManagerInstance().getThrottleInfo(roster.getDccLocoAddress(), jmri.Throttle.ISFORWARD);
             if (isForward != null) {
                 if (!(Boolean) isForward) {
                     flipIcon(NamedIcon.HORIZONTALFLIP);

@@ -86,6 +86,7 @@ public class CbusNodeConstants {
                 case 10 : // CANCMD
                 case 55 : // or CANCSB 
                 case 12 : // or CANBC
+                case 83 : // or CANCMDB
                     if ( node.getNodeParamManager().getParameter(MAJOR_VER_IDX) == 4 ) { // v4 Firmware
                         node.getNodeEventManager().resetNodeEventsToZero(); // sets num events to 0 as does not respond to RQEVN
                         node.setStatResponseFlagsAccurate(false);
@@ -318,7 +319,18 @@ public class CbusNodeConstants {
         result.put(78, "CANSBIP");
         result.put(79, "CANBUFFER");
         result.put(80, "CANLEVER");
-        
+        result.put(81, "CANSHIELD");
+        result.put(82, "CAN4IN4OUT");
+        result.put(83, "CANCMDB");
+        result.put(84, "CANPIXEL");
+        result.put(85, "CANCABPE");
+        result.put(86, "CANSMARTTD");
+        result.put(87, "CANARGB");
+        result.put(88, "CANCDU_U");
+        result.put(89, "CANGATEX");
+        result.put(90, "CANGATEXL");
+
+        result.put(252, "VLCB");
         result.put(253, "CANUSB"); // NOI18N
         result.put(254, "EMPTY"); // NOI18N
         result.put(255, "CAN_SW"); // NOI18N
@@ -497,7 +509,18 @@ public class CbusNodeConstants {
         result.put(78, "Q series PIC BIP module");
         result.put(79, "Message buffer");
         result.put(80, "Lever frame module");
-        
+        result.put(81, "Kit 110 Arduino shield test firmware");
+        result.put(82, "4 inputs 4 outputs (Arduino module)");
+        result.put(83, "CANCMD with built in booster");
+        result.put(84, "neopixel driver");
+        result.put(85, "Cab2 with pot or encoder");
+        result.put(86, "Smart train detector");
+        result.put(87, "Addressable LEDs");
+        result.put(88, "CANCDU (universal)");
+        result.put(89, "Logic module using boolean logic gates");
+        result.put(90, "Extended version of CANGATEX");
+
+        result.put(252, "All VLCB modules have the same ID");
         result.put(253, "USB interface");
         result.put(254, "Empty module, bootloader only");
         result.put(255, "Software nodes");
@@ -667,7 +690,15 @@ public class CbusNodeConstants {
         // result.put(78, "CANSBIP");
         // result.put(79, "CANBUFFER");
         // result.put(80, "CANLEVER");
+        // result.put(81, "CANSHIELD");
+        // result.put(82, "CAN4IN4OUT");
+        result.put(83, "https://www.merg.org.uk/merg_wiki/doku.php?id=cbus:cancmdb");
+        // result.put(84, "CANPIXEL");
+        // result.put(85, "CANCABPE");
+        // result.put(86, "CANSMARTTD");
+        // result.put(87, "CANARGB");
 
+        // result.put(252, "VLCB");
         // result.put(253, "CANUSB"); // NOI18N
         // result.put(254, "EMPTY"); // NOI18N
         // result.put(255, "CAN_SW"); // NOI18N        
@@ -822,5 +853,5 @@ public class CbusNodeConstants {
     
     }
 
-    // private final static Logger log = LoggerFactory.getLogger(CbusNodeConstants.class);
+    // private static final Logger log = LoggerFactory.getLogger(CbusNodeConstants.class);
 }

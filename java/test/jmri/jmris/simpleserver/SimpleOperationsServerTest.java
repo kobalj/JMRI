@@ -1,15 +1,14 @@
 package jmri.jmris.simpleserver;
 
-import jmri.InstanceManager;
-import jmri.jmrit.operations.trains.TrainManager;
-import jmri.util.JUnitUtil;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+
+import org.junit.jupiter.api.*;
+
+import jmri.InstanceManager;
+import jmri.jmrit.operations.trains.TrainManager;
+import jmri.util.JUnitAppender;
+import jmri.util.JUnitUtil;
 
 /**
  * Tests for the jmri.jmris.simpleserver.SimpleOperationsServer class
@@ -110,6 +109,9 @@ public class SimpleOperationsServerTest {
         a.parseStatus(inputString);
         // parsing the input causes a status report to be generated.
         assertThat(sb.toString()).withFailMessage("Train Command Response Check").isEqualTo("OPERATIONS , TRAIN=STF , TRAINLENGTH=160 , TRAINWEIGHT=56 , TRAINCARS=4 , TRAINCABOOSE=CP C10099 , TRAINLOCATION=North End Staging\n");
+
+        // GitHub CI workflows doesn't have a default printer
+        JUnitAppender.suppressWarnMessage("No default printer found");
     }
 
     @Test

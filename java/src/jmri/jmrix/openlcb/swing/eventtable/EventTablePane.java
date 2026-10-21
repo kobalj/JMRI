@@ -3,7 +3,6 @@ package jmri.jmrix.openlcb.swing.eventtable;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
-import java.nio.charset.StandardCharsets;
 import java.io.*;
 import java.util.*;
 
@@ -17,12 +16,8 @@ import jmri.util.ThreadingUtil;
 
 import jmri.swing.JmriJTablePersistenceManager;
 import jmri.util.swing.MultiLineCellRenderer;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
+import jmri.util.table.ButtonEditor;
+import jmri.util.table.ButtonRenderer;
 
 import org.openlcb.*;
 import org.openlcb.implementations.*;
@@ -30,9 +25,9 @@ import org.openlcb.swing.*;
 
 
 /**
- * Pane for displaying a table of relationships of nodes, producers and consumers
+ * Pane for displaying a table of relationships of nodes, producers and consumers.
  *
- * @author Bob Jacobsen Copyright (C) 2023
+ * @author Bob Jacobsen Copyright (C) 2023, 2026
  * @since 5.3.4
  */
 public class EventTablePane extends jmri.util.swing.JmriPanel
@@ -72,7 +67,8 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
         this.groupStore = InstanceManager.getDefault(OlcbNodeGroupStore.class);
         this.mimcStore = memo.get(MimicNodeStore.class);
         EventTable stdEventTable = memo.get(OlcbInterface.class).getEventTable();
-        if (stdEventTable == null) log.warn("no OLCB EventTable found");
+
+        UserPreferencesManager pm = InstanceManager.getDefault(UserPreferencesManager.class);
 
         model = new EventTableDataModel(mimcStore, stdEventTable, nameStore);
         sorter = new TableRowSorter<>(model);
@@ -95,6 +91,11 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
         table.setName("jmri.jmrix.openlcb.swing.eventtable.EventTablePane.table"); // for persistence
         table.setColumnSelectionAllowed(true);
         table.setRowSelectionAllowed(true);
+        ButtonRenderer buttonRenderer = new ButtonRenderer();
+        table.setDefaultRenderer(JButton.class, buttonRenderer);
+        TableCellEditor buttonEditor = new ButtonEditor(new JButton());
+        table.setDefaultEditor(JButton.class, buttonEditor);
+
         
         // render in fixed size font
         var defaultFont = table.getFont();
@@ -118,7 +119,7 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
 
         var updateButton = new JButton(Bundle.getMessage("ButtonUpdate"));
         updateButton.addActionListener(this::sendRequestEvents); 
-        updateButton.setToolTipText("Query the network and load results into the table");
+        updateButton.setToolTipText(Bundle.getMessage("ButtonUpdateTt"));
         buttonPanel.add(updateButton);
         
         matchGroupName = new JComboBox<>();
@@ -135,30 +136,36 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
         showRequiresLabel.addActionListener((ActionEvent e) -> {
             filter();
         });
-        showRequiresLabel.setToolTipText("When checked, only events that you've given names will be shown");
+        showRequiresLabel.setToolTipText(Bundle.getMessage("BoxShowRequiresLabelTt"));
+        showRequiresLabel.setOpaque(false); // make transparent
         buttonPanel.add(showRequiresLabel);
 
         showRequiresMatch = new JCheckBox(Bundle.getMessage("BoxShowRequiresMatch"));
         showRequiresMatch.addActionListener((ActionEvent e) -> {
             filter();
         });
-        showRequiresMatch.setToolTipText("When checked, only events with both producers and consumers will be shown.");
+        showRequiresMatch.setToolTipText(Bundle.getMessage("BoxShowRequiresMatchTt"));
+        showRequiresMatch.setOpaque(false); // make transparent
         buttonPanel.add(showRequiresMatch);
 
         popcorn = new JCheckBox(Bundle.getMessage("BoxPopcorn"));
         popcorn.addActionListener((ActionEvent e) -> {
             popcornButtonChanged();
         });
+        popcorn.setToolTipText(Bundle.getMessage("BoxPopcornTt"));
+        popcorn.setOpaque(false); // make transparent
         buttonPanel.add(popcorn);
 
         JPanel findpanel = new JPanel(); // keep button and text together
-        findpanel.setToolTipText("This finds matches in the Event ID column");
+        findpanel.setOpaque(false); // make transparent
+        findpanel.setToolTipText(Bundle.getMessage("FindPanelFindEventTt"));
         buttonPanel.add(findpanel);
         
-        JLabel find = new JLabel("Find Event: ");
+        JLabel find = new JLabel(Bundle.getMessage("FindPanelFindEvent"));
         findpanel.add(find);
 
         findID = new EventIdTextField();
+        findID.setToolTipText(Bundle.getMessage("FindPanelFindEventFieldTt"));
         findID.addActionListener(this::findRequested);
         findID.addKeyListener(new KeyListener() {
             @Override
@@ -177,21 +184,22 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
             }
         });
         findpanel.add(findID);
-        JButton addButton = new JButton("Add");
+        JButton addButton = new JButton(Bundle.getMessage("FindPanelButtonAdd"));
         addButton.addActionListener(this::addRequested);
-        addButton.setToolTipText("This adds the EventID to the left into the table.  Use when you don't find an event ID you want to name.");        
+        addButton.setToolTipText(Bundle.getMessage("FindPanelButtonAddTt"));        
         findpanel.add(addButton);
 
         findpanel = new JPanel();  // keep button and text together
-        findpanel.setToolTipText("This finds matches in the event name, producer node name, consumer node name and also-known-as columns");
+        findpanel.setOpaque(false); // make transparent
+        findpanel.setToolTipText(Bundle.getMessage("FindPanelFindNameTt"));
         buttonPanel.add(findpanel);
 
-        JLabel findText = new JLabel("Find Name: ");
+        JLabel findText = new JLabel(Bundle.getMessage("FindPanelFindName"));
         findpanel.add(findText);
 
         findTextID = new JTextField(16);
         findTextID.addActionListener(this::findTextRequested);
-        findTextID.setToolTipText("This finds matches in the event name, producer node name, consumer node name and also-known-as columns");
+        findTextID.setToolTipText(Bundle.getMessage("FindPanelFindNameTt"));
         findTextID.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent keyEvent) {
@@ -210,14 +218,14 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
         });
         findpanel.add(findTextID);        
 
-        JButton sensorButton = new JButton("Names from Sensors");
+        JButton sensorButton = new JButton(Bundle.getMessage("FindPanelButtonSensor"));
         sensorButton.addActionListener(this::sensorRequested);
-        sensorButton.setToolTipText("This fills empty cells in the event name column from JMRI Sensor names");
+        sensorButton.setToolTipText(Bundle.getMessage("FindPanelButtonSensorTt"));
         buttonPanel.add(sensorButton);
         
-        JButton turnoutButton = new JButton("Names from Turnouts");
+        JButton turnoutButton = new JButton(Bundle.getMessage("FindPanelButtonTurnout"));
         turnoutButton.addActionListener(this::turnoutRequested);
-        turnoutButton.setToolTipText("This fills empty cells in the event name column from JMRI Turnout names");
+        turnoutButton.setToolTipText(Bundle.getMessage("FindPanelButtonTurnoutTt"));
         buttonPanel.add(turnoutButton);
 
         buttonPanel.setMaximumSize(buttonPanel.getPreferredSize());
@@ -225,6 +233,11 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
         // hook up to receive traffic
         monitor = new Monitor(model);
         memo.get(OlcbInterface.class).registerMessageListener(monitor);
+
+        // set options
+        showRequiresLabel.setSelected(pm.getSimplePreferenceState(requireLabelChecked));
+        showRequiresMatch.setSelected(pm.getSimplePreferenceState(requireBothPCChecked));
+        filter();
     }
 
     public EventTablePane() {
@@ -234,7 +247,7 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
     // load updateMatchGroup combobox with current contents
     protected void updateMatchGroupName() {
         matchGroupName.removeAllItems();
-        matchGroupName.addItem("(All Groups)");
+        matchGroupName.addItem(Bundle.getMessage("FrameAllGroups"));
         
         var list = groupStore.getGroupNames();
         for (String group : list) {
@@ -244,17 +257,26 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
         matchGroupName.setVisible(matchGroupName.getItemCount() > 1);
     }
 
+    String requireLabelChecked = this.getClass().getName() + ".requireLabelChecked"; // NOI18N
+    String requireBothPCChecked = this.getClass().getName() + ".requireBothPCChecked"; // NOI18N
+
     @Override
     public void dispose() {
         // Save the column layout
         InstanceManager.getOptionalDefault(JmriJTablePersistenceManager.class).ifPresent((tpm) -> {
            tpm.stopPersisting(table);
         });
+        // save checkbox properties
+        UserPreferencesManager pm = InstanceManager.getDefault(UserPreferencesManager.class);
+        pm.setSimplePreferenceState(requireLabelChecked, showRequiresLabel.isSelected());
+        pm.setSimplePreferenceState(requireBothPCChecked, showRequiresMatch.isSelected());
+
         // remove traffic connection
         memo.get(OlcbInterface.class).unRegisterMessageListener(monitor);
-        // drop model connections
-        model = null;
         monitor = null;
+        // drop model connections
+        model.dispose();
+        model = null;
         // and complete this
         super.dispose();
     }
@@ -263,10 +285,10 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
     public java.util.List<JMenu> getMenus() {
         // create a file menu
         var retval = new ArrayList<JMenu>();
-        var fileMenu = new JMenu("File");
+        var fileMenu = new JMenu(Bundle.getMessage("PaneMenuFile"));
         fileMenu.setMnemonic(KeyEvent.VK_F);
         
-        var csvWriteItem = new JMenuItem("Save to CSV...", KeyEvent.VK_S);
+        var csvWriteItem = new JMenuItem(Bundle.getMessage("PaneSaveToCsv"), KeyEvent.VK_S);
         KeyStroke ctrlSKeyStroke = KeyStroke.getKeyStroke("control S");
         if (jmri.util.SystemType.isMacOSX()) {
             ctrlSKeyStroke = KeyStroke.getKeyStroke("meta S");
@@ -275,7 +297,7 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
         csvWriteItem.addActionListener(this::writeToCsvFile);
         fileMenu.add(csvWriteItem);
         
-        var csvReadItem = new JMenuItem("Read from CSV...", KeyEvent.VK_O);
+        var csvReadItem = new JMenuItem(Bundle.getMessage("PaneReadFromCsv"), KeyEvent.VK_O);
         KeyStroke ctrlOKeyStroke = KeyStroke.getKeyStroke("control O");
         if (jmri.util.SystemType.isMacOSX()) {
             ctrlOKeyStroke = KeyStroke.getKeyStroke("meta O");
@@ -296,18 +318,18 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
     @Override
     public String getTitle() {
         if (memo != null) {
-            return (memo.getUserName() + " Event Table");
+            return (memo.getUserName() + " " + Bundle.getMessage("TitleEventTable"));
         }
         return getTitle(Bundle.getMessage("TitleEventTable"));
     }
 
     public void sendRequestEvents(java.awt.event.ActionEvent e) {
-        model.clear();
+        model.clearAllPresentNodes();
 
-        model.loadIdTagEventIDs();
+        model.loadNameStoreEventIDs();
         model.handleTableUpdate(-1, -1);
 
-        final int IDENTIFY_EVENTS_DELAY = 125; // msec between operations - 64 events at speed
+        final int IDENTIFY_EVENTS_DELAY = 250; // msec between operations - 250 events at speed
         int nextDelay = 0;
 
         // assumes that a VerifyNodes has been done and all nodes are in the MimicNodeStore
@@ -466,58 +488,54 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
      * @param e Needed for signature of method, but ignored here
      */
     public void writeToCsvFile(ActionEvent e) {
+        var file = getCsvWriteFile();
+        
+        if (file == null) {
+            log.info("Event Table CVS write aborted");
+            return;
+        }
+        log.debug("start to export to CSV file {}", file);
 
+        model.csvWriteOperation(file);
+    }
+
+    /**
+     * User selection of file for doing CSV write.
+     * @return selected output file or null for aborted
+     */
+    File getCsvWriteFile() {
         if (fileChooser == null) {
             fileChooser = new jmri.util.swing.JmriJFileChooser();
         }
-        fileChooser.setDialogTitle("Save CSV file");
+        fileChooser.setDialogTitle(Bundle.getMessage("PaneSaveCsvFile"));
         fileChooser.rescanCurrentDirectory();
         fileChooser.setSelectedFile(new File("eventtable.csv"));
 
         int retVal = fileChooser.showSaveDialog(this);
 
         if (retVal == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            if (log.isDebugEnabled()) {
-                log.debug("start to export to CSV file {}", file);
-            }
-
-            try (CSVPrinter str = new CSVPrinter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8), CSVFormat.DEFAULT)) {
-                str.printRecord("Event ID", "Event Name", "Producer Node", "Producer Node Name",
-                                "Consumer Node", "Consumer Node Name", "Paths");
-                for (int i = 0; i < model.getRowCount(); i++) {
-
-                    str.print(model.getValueAt(i, EventTableDataModel.COL_EVENTID));
-                    str.print(model.getValueAt(i, EventTableDataModel.COL_EVENTNAME));
-                    str.print(model.getValueAt(i, EventTableDataModel.COL_PRODUCER_NODE));
-                    str.print(model.getValueAt(i, EventTableDataModel.COL_PRODUCER_NAME));
-                    str.print(model.getValueAt(i, EventTableDataModel.COL_CONSUMER_NODE));
-                    str.print(model.getValueAt(i, EventTableDataModel.COL_CONSUMER_NAME));
-
-                    String[] contexts = model.getValueAt(i, EventTableDataModel.COL_CONTEXT_INFO).toString().split("\n"); // multi-line cell
-                    for (String context : contexts) {
-                        str.print(context);
-                    }
-                    
-                    str.println();
-                }
-                str.flush();
-            } catch (IOException ex) {
-                log.error("Error writing file", ex);
-            }
+            return fileChooser.getSelectedFile();
+        } else {
+            return null;
         }
     }
-
+    
     /**
      * Read event names from a CSV file
      * @param e Needed for signature of method, but ignored here
      */
     public void readFromCsvFile(ActionEvent e) {
 
+        File file = getCsvReadFile();
+        
+        model.csvReadOperation(file);
+    }
+
+    File getCsvReadFile() {
         if (fileChooser == null) {
             fileChooser = new jmri.util.swing.JmriJFileChooser();
         }
-        fileChooser.setDialogTitle("Open CSV file");
+        fileChooser.setDialogTitle(Bundle.getMessage("PaneOpenCsvFile"));
         fileChooser.rescanCurrentDirectory();
 
         int retVal = fileChooser.showOpenDialog(this);
@@ -527,37 +545,12 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
             if (log.isDebugEnabled()) {
                 log.debug("start to read from CSV file {}", file);
             }
-
-            try (Reader in = new FileReader(file)) {
-                Iterable<CSVRecord> records = CSVFormat.RFC4180.parse(in);
-                
-                for (CSVRecord record : records) {
-                    String eventIDname = record.get(0);
-                     // Is the 1st column really an event ID
-                    EventID eid;
-                    try {
-                        eid = new EventID(eventIDname);
-                    } catch (IllegalArgumentException e1) {
-                        // really shouldn't happen, as table manages column contents
-                        log.warn("Column 0 doesn't contain an EventID: {}", eventIDname);
-                        continue;
-                    }
-                    // here we have a valid EventID, assign the name if currently blank
-                    if (! isEventNamePresent(eid)) {
-                        String eventName = record.get(1);
-                        nameStore.addMatch(eid, eventName);
-                    }         
-                }
-                log.debug("File reading complete");
-                // cause the table to update
-                model.fireTableDataChanged();
-                
-            } catch (IOException ex) {
-                log.error("Error reading file", ex);
-            }
+            return file;
+        } else {
+            return null;
         }
     }
-
+    
     /**
      * Check whether a Event Name tag is defined or not.
      * Check for other uses before changing this.
@@ -616,519 +609,6 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
     }
 
     /**
-     * Nested class to hold data model
-     */
-    protected static class EventTableDataModel extends AbstractTableModel {
-
-        EventTableDataModel(MimicNodeStore store, EventTable stdEventTable, OlcbEventNameStore nameStore) {
-            this.store = store;
-            this.stdEventTable = stdEventTable;
-            this.nameStore = nameStore;
-
-            loadIdTagEventIDs();
-        }
-
-        static final int COL_EVENTID = 0;
-        static final int COL_EVENTNAME = 1;
-        static final int COL_PRODUCER_NODE = 2;
-        static final int COL_PRODUCER_NAME = 3;
-        static final int COL_CONSUMER_NODE = 4;
-        static final int COL_CONSUMER_NAME = 5;
-        static final int COL_CONTEXT_INFO = 6;
-        static final int COL_COUNT = 7;
-
-        MimicNodeStore store;
-        EventTable stdEventTable;
-        OlcbEventNameStore nameStore;
-        IdTagManager tagManager;
-        JTable table;
-        TableRowSorter<EventTableDataModel> sorter;
-        boolean popcornModeActive = false;
-
-        TripleMemo getTripleMemo(int row) {
-            if (row >= memos.size()) {
-                return null;
-            }
-            return memos.get(row);
-        }
-
-        void loadIdTagEventIDs() {
-            // are there events in the IdTags? If so, add them
-            for (var eventID: nameStore.getMatches()) {
-                var memo = new TripleMemo(
-                                    eventID,
-                                    "",
-                                    null,
-                                    "",
-                                    null,
-                                    ""
-                                );
-                // check to see if already in there:
-                boolean found = false;
-                for (var check : memos) {
-                    if (memo.eventID.equals(check.eventID)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (! found) {
-                    memos.add(memo);
-                }
-            }
-        }
-
-
-        @Override
-        public Object getValueAt(int row, int col) {
-            if (row >= memos.size()) {
-                log.warn("request out of range: {} greater than {}", row, memos.size());
-                return "Illegal col "+row+" "+col;
-            }
-            var memo = memos.get(row);
-            switch (col) {
-                case COL_EVENTID: 
-                    String retval = memo.eventID.toShortString();
-                    if (!memo.rangeSuffix.isEmpty()) retval += " - "+memo.rangeSuffix;
-                    return retval;
-                case COL_EVENTNAME:
-                    if (nameStore.hasEventName(memo.eventID)) {
-                        return nameStore.getEventName(memo.eventID);
-                    } else {
-                        return "";
-                    }
-                    
-                case COL_PRODUCER_NODE:
-                    return memo.producer != null ? memo.producer.toString() : "";
-                case COL_PRODUCER_NAME: return memo.producerName;
-                case COL_CONSUMER_NODE:
-                    return memo.consumer != null ? memo.consumer.toString() : "";
-                case COL_CONSUMER_NAME: return memo.consumerName;
-                case COL_CONTEXT_INFO:
-
-                    // When table is constrained, these rows don't match up, need to find constrained row
-                    var viewRow = sorter.convertRowIndexToView(row);
-
-                    if (lineIncrement <= 0) { // load cache variable?
-                        if (viewRow >= 0) {
-                            lineIncrement = table.getRowHeight(viewRow); // do this if valid row
-                        } else {
-                            lineIncrement = table.getFont().getSize()*13/10; // line spacing from font if not valid row
-                        }
-                     }
-
-                    var result = new StringBuilder();
-
-                    var height = lineIncrement/3; // for margins
-                    var first = true;   // no \n before first line
-
-                    // interpret eventID and start with that if present
-                    String interp = memo.eventID.parse();
-                    if (interp != null && !interp.isEmpty()) {
-                        height += lineIncrement;
-                        result.append(interp);                        
-                        first = false;
-                    }
-
-                    // scan the CD/CDI information as available
-                    for (var entry : stdEventTable.getEventInfo(memo.eventID).getAllEntries()) {
-                        if (!first) result.append("\n");
-                        first = false;
-                        height += lineIncrement;
-                        result.append(entry.getDescription());
-                    }
-
-                    // set height for multi-line output in the cell
-                    if (viewRow >= 0) { // make sure it's a valid visible row in the table; -1 signals not
-                        // set height
-                        if (height < lineIncrement) {
-                            height = height+lineIncrement; // when no lines, assume 1
-                        }
-                        table.setRowHeight(viewRow, height);
-                    } else {
-                        lineIncrement = -1;  // reload on next request, hoping for a viewed row
-                    }
-                    return new String(result);
-                default: return "Illegal row "+row+" "+col;
-            }
-        }
-
-        int lineIncrement = -1; // cache the line spacing for multi-line cells; 
-                                // this gets the value before any adjustments done
-
-        @Override
-        public void setValueAt(Object value, int row, int col) {
-            if (col != COL_EVENTNAME) return;
-            if (row >= memos.size()) {
-                log.warn("request out of range: {} greater than {}", row, memos.size());
-                return;
-            }
-            var memo = memos.get(row);
-            nameStore.addMatch(memo.eventID, value.toString());
-        }
-
-        @Override
-        public int getColumnCount() {
-            return COL_COUNT;
-        }
-
-        @Override
-        public String getColumnName(int col) {
-            switch (col) {
-                case COL_EVENTID:       return "Event ID";
-                case COL_EVENTNAME:     return "Event Name";
-                case COL_PRODUCER_NODE: return "Producer Node";
-                case COL_PRODUCER_NAME: return "Producer Node Name";
-                case COL_CONSUMER_NODE: return "Consumer Node";
-                case COL_CONSUMER_NAME: return "Consumer Node Name";
-                case COL_CONTEXT_INFO:  return "Also Known As";
-                default: return "ERROR "+col;
-            }
-        }
-
-        @Override
-        public int getRowCount() {
-            return memos.size();
-        }
-
-        @Override
-        public boolean isCellEditable(int row, int col) {
-            return col == COL_EVENTNAME;
-        }
-
-        @Override
-        public Class<?> getColumnClass(int col) {
-            return String.class;
-        }
-
-        /**
-         * Remove all existing data, generally just in advance of an update
-         */
-        @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD") // Swing thread deconflicts
-        void clear() {
-            memos = new ArrayList<>();
-            fireTableDataChanged();  // don't queue this one, must be immediate
-        }
-
-        // static so the data remains available through a window close-open cycle
-        static ArrayList<TripleMemo> memos = new ArrayList<>();
-
-        /**
-         * Notify the table that the contents have changed.
-         * To reduce CPU load, this batches the changes
-         * @param start first row changed; -1 means entire table (not used yet)
-         * @param end   last row changed; -1 means entire table (not used yet)
-         */
-        void handleTableUpdate(int start, int end) {
-            log.trace("handleTableUpdated");
-            final int DELAY = 500;
-
-            if (!pending) {
-                jmri.util.ThreadingUtil.runOnGUIDelayed(() -> {
-                    pending = false;
-                    log.debug("handleTableUpdated fires table changed");
-                    fireTableDataChanged();
-                }, DELAY);
-                pending = true;
-            }
-
-        }
-        boolean pending = false;
-
-        /**
-         * Record an event-producer pair
-         * @param eventID Observed event
-         * @param nodeID  Node that is known to produce the event
-         * @param rangeSuffix the range mask string or "" for single events
-         */
-        void recordProducer(EventID eventID, NodeID nodeID, String rangeSuffix) {
-            log.debug("recordProducer of {} in {}", eventID, nodeID);
-
-            // update if the model has been cleared
-            if (memos.size() <= 1) {
-                handleTableUpdate(-1, -1);
-            }
-
-            var nodeMemo = store.findNode(nodeID);
-            String name = "";
-            if (nodeMemo != null) {
-                var ident = nodeMemo.getSimpleNodeIdent();
-                    if (ident != null) {
-                        name = ident.getUserName();
-                        if (name.isEmpty()) {
-                            name = ident.getMfgName()+" - "+ident.getModelName()+" - "+ident.getHardwareVersion();
-                        }
-                    }
-            }
-
-
-            // if this already exists, skip storing it
-            // if you can, find a matching memo with an empty consumer value
-            TripleMemo empty = null;    // an existing empty cell                       // TODO: switch to int index for handle update below
-            TripleMemo bestEmpty = null;// an existing empty cell with matching consumer// TODO: switch to int index for handle update below
-            TripleMemo sameNodeID = null;// cell with matching consumer                 // TODO: switch to int index for handle update below
-            for (int i = 0; i < memos.size(); i++) {
-                var memo = memos.get(i);
-                if (memo.eventID.equals(eventID) && memo.rangeSuffix.equals(rangeSuffix) ) {
-                    // if nodeID matches, already present; ignore
-                    if (nodeID.equals(memo.producer)) {
-                        // might be 2nd EventTablePane to process the data,
-                        // hence memos would already have been processed. To
-                        // handle that, need to fire a change to the table.
-                        // On the other hand, this rapidly erases the
-                        // popcorn display, so we disable it for that.
-                        if (!popcornModeActive) {
-                            handleTableUpdate(i, i);
-                        }
-                        return;
-                    }
-                    // if empty producer slot, remember it
-                    if (memo.producer == null) {
-                        empty = memo;
-                        // best empty has matching consumer
-                        if (nodeID.equals(memo.consumer)) bestEmpty = memo;
-                    }
-                    // if same consumer slot, remember it
-                    if (nodeID == memo.consumer) {
-                        sameNodeID = memo;
-                    }
-                }
-            }
-
-            // can we use the bestEmpty?
-            if (bestEmpty != null) {
-                // yes
-                log.trace("   use bestEmpty");
-                bestEmpty.producer = nodeID;
-                bestEmpty.producerName = name;
-                handleTableUpdate(-1, -1); // TODO: should be rows for bestEmpty, bestEmpty
-                return;
-            }
-
-            // can we just insert into the empty?
-            if (empty != null && sameNodeID == null) {
-                // yes
-                log.trace("   reuse empty");
-                empty.producer = nodeID;
-                empty.producerName = name;
-                handleTableUpdate(-1, -1); // TODO: should be rows for empty, empty
-                return;
-            }
-
-            // is there a sameNodeID to insert into?
-            if (sameNodeID != null) {
-                // yes
-                log.trace("   switch to sameID");
-                var fromSaveNodeID = sameNodeID.producer;
-                var fromSaveNodeIDName = sameNodeID.producerName;
-                sameNodeID.producer = nodeID;
-                sameNodeID.producerName = name;
-                // now leave behind old cell to make new one in next block
-                nodeID = fromSaveNodeID;
-                name = fromSaveNodeIDName;
-            }
-
-            // have to make a new one
-            var memo = new TripleMemo(
-                            eventID,
-                            rangeSuffix,
-                            nodeID,
-                            name,
-                            null,
-                            ""
-                        );
-            memos.add(memo);
-            handleTableUpdate(memos.size()-1, memos.size()-1);
-        }
-
-        /**
-         * Record an event-consumer pair
-         * @param eventID Observed event
-         * @param nodeID  Node that is known to consume the event
-         * @param rangeSuffix the range mask string or "" for single events
-         */
-        void recordConsumer(EventID eventID, NodeID nodeID, String rangeSuffix) {
-            log.debug("recordConsumer of {} in {}", eventID, nodeID);
-
-            // update if the model has been cleared
-            if (memos.size() <= 1) {
-                handleTableUpdate(-1, -1);
-            }
-
-            var nodeMemo = store.findNode(nodeID);
-            String name = "";
-            if (nodeMemo != null) {
-                var ident = nodeMemo.getSimpleNodeIdent();
-                    if (ident != null) {
-                        name = ident.getUserName();
-                        if (name.isEmpty()) {
-                            name = ident.getMfgName()+" - "+ident.getModelName()+" - "+ident.getHardwareVersion();
-                        }
-                    }
-            }
-
-            // if this already exists, skip storing it
-            // if you can, find a matching memo with an empty consumer value
-            TripleMemo empty = null;    // an existing empty cell                       // TODO: switch to int index for handle update below
-            TripleMemo bestEmpty = null;// an existing empty cell with matching producer// TODO: switch to int index for handle update below
-            TripleMemo sameNodeID = null;// cell with matching consumer                 // TODO: switch to int index for handle update below
-            for (int i = 0; i < memos.size(); i++) {
-                var memo = memos.get(i);
-                if (memo.eventID.equals(eventID) && memo.rangeSuffix.equals(rangeSuffix) ) {
-                    // if nodeID matches, already present; ignore
-                    if (nodeID.equals(memo.consumer)) {
-                        // might be 2nd EventTablePane to process the data,
-                        // hence memos would already have been processed. To
-                        // handle that, always fire a change to the table.
-                        log.trace("    nodeDI == memo.consumer");
-                        handleTableUpdate(i, i);
-                        return;
-                    }
-                    // if empty consumer slot, remember it
-                    if (memo.consumer == null) {
-                        empty = memo;
-                        // best empty has matching producer
-                        if (nodeID.equals(memo.producer)) bestEmpty = memo;
-                    }
-                    // if same producer slot, remember it
-                    if (nodeID == memo.producer) {
-                        sameNodeID = memo;
-                    }
-                }
-            }
-
-            // can we use the best empty?
-            if (bestEmpty != null) {
-                // yes
-                log.trace("   use bestEmpty");
-                bestEmpty.consumer = nodeID;
-                bestEmpty.consumerName = name;
-                handleTableUpdate(-1, -1);  // should be rows for bestEmpty, bestEmpty
-                return;
-            }
-
-            // can we just insert into the empty?
-            if (empty != null && sameNodeID == null) {
-                // yes
-                log.trace("   reuse empty");
-                empty.consumer = nodeID;
-                empty.consumerName = name;
-                handleTableUpdate(-1, -1);  // should be rows for empty, empty
-                return;
-            }
-
-            // is there a sameNodeID to insert into?
-            if (sameNodeID != null) {
-                // yes
-                log.trace("   switch to sameID");
-                var fromSaveNodeID = sameNodeID.consumer;
-                var fromSaveNodeIDName = sameNodeID.consumerName;
-                sameNodeID.consumer = nodeID;
-                sameNodeID.consumerName = name;
-                // now leave behind old cell to make new one
-                nodeID = fromSaveNodeID;
-                name = fromSaveNodeIDName;
-            }
-
-            // have to make a new one
-            log.trace("    make a new one");
-            var memo = new TripleMemo(
-                            eventID,
-                            rangeSuffix,
-                            null,
-                            "",
-                            nodeID,
-                            name
-                        );
-            memos.add(memo);
-            handleTableUpdate(memos.size()-1, memos.size()-1);
-         }
-
-        // This causes the display to jump around as it tried to keep
-        // the selected cell visible.
-        // TODO: A better approach might be to change
-        // the cell background color via a custom cell renderer
-        void highlightProducer(EventID eventID, NodeID nodeID) {
-            if (!popcornModeActive) return;
-            log.trace("highlightProducer {} {}", eventID, nodeID);
-            for (int i = 0; i < memos.size(); i++) {
-                var memo = memos.get(i);
-                if (eventID.equals(memo.eventID)  && memo.rangeSuffix.equals("") && nodeID.equals(memo.producer)) {
-                    try {
-                        var viewRow = sorter.convertRowIndexToView(i);
-                        log.trace("highlight event ID {} row {} viewRow {}", eventID, i, viewRow);
-                        if (viewRow >= 0) {
-                            table.changeSelection(viewRow, COL_PRODUCER_NODE, false, false);
-                        }
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        // can happen on first encounter of an event before table is updated
-                        log.trace("failed to highlight event ID {} row {}", eventID.toShortString(), i);
-                    }
-                }
-            }
-        }
-
-        // highlights (selects) all the eventID cells with a particular event,
-        // Most LAFs will move the first of these on-scroll-view.
-        void highlightEvent(EventID eventID) {
-            log.trace("highlightEvent {}", eventID);
-            table.clearSelection(); // clear existing selections
-            for (int i = 0; i < memos.size(); i++) {
-                var memo = memos.get(i);
-                if (eventID.equals(memo.eventID) && memo.rangeSuffix.equals("") ) {
-                    try {
-                        var viewRow = sorter.convertRowIndexToView(i);
-                        log.trace("highlight event ID {} row {} viewRow {}", eventID, i, viewRow);
-                        if (viewRow >= 0) {
-                            table.changeSelection(viewRow, COL_EVENTID, true, false);
-                        }
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        // can happen on first encounter of an event before table is updated
-                        log.trace("failed to highlight event ID {} row {}", eventID.toShortString(), i);
-                    }
-                }
-            }
-        }
-
-        boolean consumerPresent(EventID eventID) {
-            for (var memo : memos) {
-                if (memo.eventID.equals(eventID) && memo.rangeSuffix.equals("") ) {
-                    if (memo.consumer!=null) return true;
-                }
-            }
-            return false;
-        }
-
-        boolean producerPresent(EventID eventID) {
-            for (var memo : memos) {
-                if (memo.eventID.equals(eventID) && memo.rangeSuffix.equals("") ) {
-                    if (memo.producer!=null) return true;
-                }
-            }
-            return false;
-        }
-
-        static class TripleMemo {
-            final EventID eventID;
-            final String  rangeSuffix;
-            // Event name is stored in an OlcbEventNameStore, see getValueAt()
-            NodeID producer;
-            String producerName;
-            NodeID consumer;
-            String consumerName;
-
-            TripleMemo(EventID eventID, String rangeSuffix, NodeID producer, String producerName,
-                        NodeID consumer, String consumerName) {
-                this.eventID = eventID;
-                this.rangeSuffix = rangeSuffix;
-                this.producer = producer;
-                this.producerName = producerName;
-                this.consumer = consumer;
-                this.consumerName = consumerName;
-            }
-        }
-    }
-
-    /**
      * Internal class to watch OpenLCB traffic
      */
 
@@ -1150,7 +630,7 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
             ThreadingUtil.runOnGUIEventually(()->{
                 var nodeID = msg.getSourceNodeID();
                 var eventID = msg.getEventID();
-                model.recordProducer(eventID, nodeID, "");
+                model.recordProducer(eventID, nodeID, "", true);
                 model.highlightProducer(eventID, nodeID);
             });
         }
@@ -1179,7 +659,7 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
             ThreadingUtil.runOnGUIEventually(()->{
                 var nodeID = msg.getSourceNodeID();
                 var eventID = msg.getEventID();
-                model.recordProducer(eventID, nodeID, "");
+                model.recordProducer(eventID, nodeID, "", false);
             });
         }
 
@@ -1207,7 +687,7 @@ public class EventTablePane extends jmri.util.swing.JmriPanel
                 // have to set low part of event ID to 0's as it might be 1's
                 EventID zeroedEID = new EventID(eventID.toLong() & (~rangeSuffix));
                 
-                model.recordProducer(zeroedEID, nodeID, (new EventID(eventID.toLong() | rangeSuffix)).toShortString());
+                model.recordProducer(zeroedEID, nodeID, (new EventID(eventID.toLong() | rangeSuffix)).toShortString(), false);
             });
         }
 

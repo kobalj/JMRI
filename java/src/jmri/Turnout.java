@@ -149,6 +149,15 @@ public interface Turnout extends DigitalIO, VariableControlSpanBean {
     static final int LNALTERNATE = 256;
 
     /**
+     * Constant representing "CS VPIN output mode". The command station drives a
+     * VPIN directly via the {@code <z>} command with no pre-definition required
+     * in the CS output table. Differs from {@link #DIRECT} (which sends a DCC
+     * accessory packet); this sends a VPIN pin-control command resolved by the
+     * CS HAL layer at runtime. The known state is updated optimistically on send.
+     */
+    static final int CS_VPIN = 512;
+
+    /**
      * Constant representing turnout lockout cab commands
      */
     static final int CABLOCKOUT = 1;
@@ -661,7 +670,7 @@ public interface Turnout extends DigitalIO, VariableControlSpanBean {
      * Used to insert a delay before calling {@link #setCommandedState(int)} to spread out a series of
      * output commands, as in {@link jmri.implementation.MatrixSignalMast#updateOutputs(char[])} and
      * {@link jmri.implementation.DefaultRoute} class SetRouteThread#run().
-     * Interval value is kept in the Memo per hardware connection, default = 0
+     * Interval value is kept in the Memo per hardware connection.
      *
      * @param s turnout state to forward
      */

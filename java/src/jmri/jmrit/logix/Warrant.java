@@ -112,6 +112,11 @@ public class Warrant extends jmri.implementation.AbstractNamedBean implements Th
      */
     public static final String PROPERTY_OCCUPY_OVERRUN = "OccupyOverrun";
 
+    /**
+     * String constant for running message.
+     */
+    public static final String PROPERTY_RUNNING_MESSAGE = "RunningMessage";
+
     // permanent members.
     private List<BlockOrder> _orders;
     private BlockOrder _viaOrder;
@@ -133,9 +138,8 @@ public class Warrant extends jmri.implementation.AbstractNamedBean implements Th
     private boolean _lost;      // helps recovery if _idxCurrentOrder block goes inactive
     private boolean _overrun;   // train overran a signal or warrant stop
     private boolean _rampBlkOccupied;  // test for overruns when speed change block occupied by another train
-    private int _idxCurrentOrder; // Index of block at head of train (if running)
-
-    protected int _runMode = MODE_NONE;
+    private int _idxCurrentOrder;
+    protected volatile int _runMode = MODE_NONE; // volatile: polled by CheckForTermination from its own thread
     private Engineer _engineer; // thread that runs the train
     @GuardedBy("this")
     private CommandDelay _delayCommand; // thread for delayed ramp down
@@ -662,9 +666,42 @@ public class Warrant extends jmri.implementation.AbstractNamedBean implements Th
 
     }
 
+    /**
+     * Get the warrant speed message for the current throttle speed setting.
+     * This is public to provide access for scripts and LogixNG formulas.
+     * @return the current speed message or "Not available".
+     */
+    public String getWarrantSpeedMessage() {
+        var msg = Bundle.getMessage("SpeedNotAvailable");
+        if (_runMode == Warrant.MODE_RUN && _engineer != null) {
+            msg = getSpeedMessage(_engineer.getSpeedType(true));
+        }
+        return msg;
+    }
+
+    /**
+     * Get the running message.
+     * It's possible to listen to this message by the property {@link #PROPERTY_RUNNING_MESSAGE}.
+     * @return the message
+     */
+    protected final synchronized String getRunningMessage() {
+        // Note that this method is final. To override it, you need
+        // to override the method getRunningMessagePrim().
+        String msg = getRunningMessagePrim();
+        firePropertyChange(PROPERTY_RUNNING_MESSAGE, null, msg);
+        return msg;
+    }
+
+    /**
+     * Get the running message.
+     * This is a primitive method for the {@link #getRunningMessage()} method.
+     * It creates the message so that the method {@link #getRunningMessage()}
+     * can notify its listeners about the message.
+     * @return the message
+     */
     @SuppressWarnings("fallthrough")
     @SuppressFBWarnings(value = "SF_SWITCH_FALLTHROUGH")
-    protected synchronized String getRunningMessage() {
+    protected synchronized String getRunningMessagePrim() {
         if (_delayStart) {
             return Bundle.getMessage("waitForDelayStart", _trainName, getBlockAt(0).getDisplayName());
         }
@@ -934,27 +971,20 @@ public class Warrant extends jmri.implementation.AbstractNamedBean implements Th
         }
         _addTracker = false;
 
+        // capture before runOnGUI — deAllocate is async; CheckForTermination may reset _idxCurrentOrder on the GUI thread
+        final int capturedIdx = _idxCurrentOrder;
+        final String capturedBlockName = abort ? null : getCurrentBlockName();
+
         // insulate possible non-GUI thread making this call (e.g. Engineer)
         ThreadingUtil.runOnGUI(this::deAllocate);
 
         String bundleKey;
-        String blockName;
         if (abort) {
-            blockName = null;
-            if (_idxCurrentOrder <= 0) {
-                bundleKey = "warrantAnnull";
-            } else {
-                bundleKey = "warrantAbort";
-            }
+            bundleKey = capturedIdx <= 0 ? "warrantAnnull" : "warrantAbort";
         } else {
-            blockName = getCurrentBlockName();
-            if (_idxCurrentOrder == _orders.size() - 1) {
-                bundleKey = "warrantComplete";
-            } else {
-                bundleKey = "warrantEnd";
-            }
+            bundleKey = (capturedIdx == _orders.size() - 1) ? "warrantComplete" : "warrantEnd";
         }
-        fireRunStatus(PROPERTY_STOP_WARRANT, blockName, bundleKey);
+        fireRunStatus(PROPERTY_STOP_WARRANT, capturedBlockName, bundleKey);
     }
 
     /**
@@ -2940,7 +2970,6 @@ public class Warrant extends jmri.implementation.AbstractNamedBean implements Th
     /*
      * if there is sufficient room calculate a wait time, otherwise ramp immediately.
      */
-    @SuppressFBWarnings(value = "SF_SWITCH_FALLTHROUGH", justification="Write unexpected error and fall through")
     synchronized private boolean doDelayRamp(float availDist, float changeDist, int idxSpeedChange, String speedType, int cmdStartIdx) {
         String pendingSpeedType = _engineer.getSpeedType(true); // current or pending speed type
         if (pendingSpeedType.equals(speedType)) {
@@ -3321,5 +3350,5 @@ public class Warrant extends jmri.implementation.AbstractNamedBean implements Th
         return report;
     }
 
-    private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Warrant.class);
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Warrant.class);
 }

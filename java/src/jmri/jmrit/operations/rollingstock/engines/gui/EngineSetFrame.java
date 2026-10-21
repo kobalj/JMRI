@@ -145,6 +145,12 @@ public class EngineSetFrame extends RollingStockSetFrame<Engine> {
     }
 
     protected boolean change(Engine engine) {
+        if (engine.isClone()) {
+            JmriJOptionPane.showMessageDialog(this,
+                    Bundle.getMessage("RsIsClone", engine.toString()),
+                    Bundle.getMessage("DoNotModifyClone"), JmriJOptionPane.WARNING_MESSAGE);
+            return false;
+        }
         // consist
         if (consistComboBox.getSelectedItem() != null) {
             if (consistComboBox.getSelectedItem().equals(ConsistManager.NONE)) {
@@ -196,5 +202,5 @@ public class EngineSetFrame extends RollingStockSetFrame<Engine> {
         }
     }
 
-    //    private final static Logger log = LoggerFactory.getLogger(EngineSetFrame.class);
+    //    private static final Logger log = LoggerFactory.getLogger(EngineSetFrame.class);
 }

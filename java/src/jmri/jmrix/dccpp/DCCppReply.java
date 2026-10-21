@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import jmri.configurexml.AbstractXmlAdapter;
 
 /**
- * Represents a single response from the DCC++ system.
+ * Represents a single response from the DCC-EX system.
  *
  * @author Paul Bender Copyright (C) 2004
  * @author Mark Underwood Copyright (C) 2015
@@ -307,6 +307,20 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
                     text += " Type:" + getAutomationTypeString();
                     text += " Desc:'" + getAutomationDescString() + "'";
                     break;
+                } else if (isAutomationStateReply()) {    
+                    text = "AutomationID:" + getAutomationIDString();
+                    text += " State:" + getAutomationStateString() + "'";
+                    break;
+                } else if (isAutomationCaptionReply()) {    
+                    text = "AutomationID:" + getAutomationIDString();
+                    text += " Caption:'" + getAutomationCaptionString() + "'";
+                    break;
+                } else if (isCurrentMaxesReply()) {    
+                    text = "CurrentMaxes:" + getCurrentMaxesList();
+                    break;
+                } else if (isCurrentValuesReply()) {    
+                    text = "CurrentValues:" + getCurrentValuesList();
+                    break;
                 } else if (isClockReply()) {    
                     String hhmm = String.format("%02d:%02d",
                             getClockMinutesInt() / 60,
@@ -320,7 +334,7 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
                 text = "Unknown Message: '" + toString() + "'";
                 break;
             case DCCppConstants.TRACKMANAGER_CMD:
-                text = "TrackManager:" + toString();
+                text = "TrackManager Letter:" + getTrackManagerLetter() + " Mode:" + getTrackManagerMode();
                 break;
             case DCCppConstants.LCD_TEXT_CMD:
                 text = "LCD Text '" + getLCDTextString() + "', disp " + getLCDDisplayNumString() + ", line " + getLCDLineNumString();
@@ -604,6 +618,14 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
                     r.myRegex = DCCppConstants.AUTOMATION_IDS_REPLY_REGEX;
                 } else if (s.matches(DCCppConstants.AUTOMATION_ID_REPLY_REGEX)) {
                     r.myRegex = DCCppConstants.AUTOMATION_ID_REPLY_REGEX;
+                } else if (s.matches(DCCppConstants.AUTOMATION_STATE_REPLY_REGEX)) {
+                    r.myRegex = DCCppConstants.AUTOMATION_STATE_REPLY_REGEX;
+                } else if (s.matches(DCCppConstants.AUTOMATION_CAPTION_REPLY_REGEX)) {
+                    r.myRegex = DCCppConstants.AUTOMATION_CAPTION_REPLY_REGEX;
+                } else if (s.matches(DCCppConstants.CURRENT_MAXES_REPLY_REGEX)) {
+                    r.myRegex = DCCppConstants.CURRENT_MAXES_REPLY_REGEX;
+                } else if (s.matches(DCCppConstants.CURRENT_VALUES_REPLY_REGEX)) {
+                    r.myRegex = DCCppConstants.CURRENT_VALUES_REPLY_REGEX;
                 } else if (s.matches(DCCppConstants.CLOCK_REPLY_REGEX)) {
                     r.myRegex = DCCppConstants.CLOCK_REPLY_REGEX;
                 }
@@ -620,7 +642,7 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
     }
 
     /**
-     * Not really used inside of DCC++. Just here to play nicely with the
+     * Not really used inside of DCC-EX. Just here to play nicely with the
      * inheritance. 
      * TODO: If this is unused, can we just not override it and (not) "use" 
      * the superclass version? 
@@ -751,7 +773,7 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
     }
 
     /*
-     * Some notes on DCC++ messages and responses...
+     * Some notes on DCC-EX messages and responses...
      *
      * Messages that have responses expected: 
      * t : <T REGISTER SPEED DIRECTION>
@@ -769,7 +791,7 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
      * s : Series of status messages... 
      *     <p[0,1]> Power state
      *     <T ...>Throttle responses from all registers
-     *     <iDCC++ ... > Base station version and build date
+     *     <iDCC-EX ... > Base station version and build date
      *     <H ID ADDR INDEX THROW> All turnout states.
      *
      * Unsolicited Replies:
@@ -800,7 +822,7 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
             return (m);
 
         } catch (PatternSyntaxException e) {
-            log.error("Malformed DCC++ reply syntax! s = {}", pat);
+            log.error("Malformed DCC-EX reply syntax! s = {}", pat);
             return (null);
         } catch (IllegalStateException e) {
             log.error("Group called before match operation executed string = {}", s);
@@ -1096,10 +1118,10 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
         return (Integer.toString(this.getAutomationIDInt()));
     }
     public int getAutomationIDInt() {
-        if (this.isAutomationIDReply()) {
+        if (this.isAutomationIDReply() || this.isAutomationStateReply() || this.isAutomationCaptionReply()) {
             return (this.getValueInt(1));
         } else {
-            log.error("AutomationIDInt Parser called on non-AutomationIDInt message type {}", this.getOpCodeChar());
+            log.error("AutomationIDInt Parser called on non-AutomationIDInt message '{}'", this.toString());
             return (0);
         }
     }
@@ -1613,13 +1635,23 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
     }
 
     public ArrayList<Integer> getTurnoutIDList() {
-        ArrayList<Integer> ids=new ArrayList<Integer>(); 
+        ArrayList<Integer> ids=new ArrayList<Integer>();
         if (this.isTurnoutIDsReply()) {
             String idList = this.getValueString(1);
             if (!idList.isEmpty()) {
                 String[] idStrings = idList.split(" ");
                 for (String idString : idStrings) {
-                    ids.add(Integer.parseInt(idString));
+                    try {
+                        int id = Integer.parseInt(idString);
+                        if (id >= 1 && id <= DCCppConstants.MAX_TURNOUT_ADDRESS) {
+                            ids.add(id);
+                        } else {
+                            // DCC-EX WiFi buffer overflow (Mega+WiFi) can corrupt the jT reply, producing out-of-range IDs
+                            log.warn("Ignoring out-of-range turnout ID {} in jT response (buffer overflow?)", id);
+                        }
+                    } catch (NumberFormatException e) {
+                        log.warn("Ignoring malformed token '{}' in jT response", idString);
+                    }
                 }
             }
         } else {
@@ -1687,7 +1719,23 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
         if (this.isAutomationIDReply()) {
             return (this.getValueString(3));
         } else {
-            log.error("getAutomationDescString called on nonAutomationIDReply message type {}", this.getOpCodeChar());
+            log.error("getAutomationDescString called on non-AutomationIDReply message type {}", this.getOpCodeChar());
+            return ("");
+        }
+    }
+    public String getAutomationStateString() {
+        if (this.isAutomationStateReply()) {
+            return (this.getValueString(2));
+        } else {
+            log.error("getAutomationStateString called on non-AutomationStateReply message '{}'", this.toString());
+            return ("");
+        }
+    }
+    public String getAutomationCaptionString() {
+        if (this.isAutomationCaptionReply()) {
+            return (this.getValueString(2));
+        } else {
+            log.error("getAutomationCaptionString called on non-AutomationCaption message '{}'", this.toString());
             return ("");
         }
     }
@@ -1705,6 +1753,58 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
             log.error("getAutomationIDList called on non-AutomationIDsReply message type {}", this.getOpCodeChar());
         }
         return ids;
+    }
+    public ArrayList<Integer> getCurrentMaxesList() {
+        ArrayList<Integer> cml=new ArrayList<Integer>();
+        if (this.isCurrentMaxesReply()) {
+            String sml = this.getValueString(1);
+            if (!sml.isEmpty()) {
+                String[] mss = sml.split(" ");
+                for (String ms : mss) {
+                    cml.add(Integer.parseInt(ms));
+                }
+            }
+        } else {
+            log.error("getCurrentMaxesList called on non-CurrentMaxesListReply message type {}", this.getOpCodeChar());
+        }
+        return cml;
+    }
+    public ArrayList<Integer> getCurrentValuesList() {
+        ArrayList<Integer> cvl=new ArrayList<Integer>();
+        if (this.isCurrentValuesReply()) {
+            String svl = this.getValueString(1);
+            if (!svl.isEmpty()) {
+                String[] vss = svl.split(" ");
+                for (String vs : vss) {
+                    cvl.add(Integer.parseInt(vs));
+                }
+            }
+        } else {
+            log.error("getCurrentValuesList called on non-CurrentValuesListReply message type {}", this.getOpCodeChar());
+        }
+        return cvl;
+    }
+
+    public char getTrackManagerLetter() {
+        if (this.isTrackManagerReply()) {
+            String s = this.getValueString(1);
+            if (!s.isEmpty()) {                
+                return (s.charAt(0)); //convert to a char
+            } else {
+                return ('0');
+            }
+        } else {
+            log.error("getTrackManagerLetter Parser called on non-TrackManager message type {}", this.getOpCodeChar());
+            return ('0');
+        }
+    }
+    public String getTrackManagerMode() {
+        if (this.isTrackManagerReply()) {
+            return (this.getValueString(2));
+        } else {
+            log.error("getTrackManagerMode Parser called on non-TrackManager message type {}", this.getOpCodeChar());
+            return ("0");
+        }
     }
 
     public String getClockMinutesString() {
@@ -1916,6 +2016,18 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
     public boolean isAutomationIDReply() {
         return (this.matches(DCCppConstants.AUTOMATION_ID_REPLY_REGEX));
     }
+    public boolean isAutomationStateReply() {
+        return (this.matches(DCCppConstants.AUTOMATION_STATE_REPLY_REGEX));
+    }
+    public boolean isAutomationCaptionReply() {
+        return (this.matches(DCCppConstants.AUTOMATION_CAPTION_REPLY_REGEX));
+    }
+    public boolean isCurrentMaxesReply() {
+        return (this.matches(DCCppConstants.CURRENT_MAXES_REPLY_REGEX));
+    }
+    public boolean isCurrentValuesReply() {
+        return (this.matches(DCCppConstants.CURRENT_VALUES_REPLY_REGEX));
+    }
     public boolean isClockReply() {
         return (this.matches(DCCppConstants.CLOCK_REPLY_REGEX));
     }
@@ -1956,6 +2068,10 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
                 (this.matches(DCCppConstants.ROSTER_ID_REPLY_REGEX)) ||
                 (this.matches(DCCppConstants.AUTOMATION_IDS_REPLY_REGEX)) ||
                 (this.matches(DCCppConstants.AUTOMATION_ID_REPLY_REGEX)) ||
+                (this.matches(DCCppConstants.AUTOMATION_STATE_REPLY_REGEX)) ||
+                (this.matches(DCCppConstants.AUTOMATION_CAPTION_REPLY_REGEX)) ||
+                (this.matches(DCCppConstants.CURRENT_MAXES_REPLY_REGEX)) ||
+                (this.matches(DCCppConstants.CURRENT_VALUES_REPLY_REGEX)) ||
                 (this.matches(DCCppConstants.TURNOUT_IMPL_REGEX)) ||
                 (this.matches(DCCppConstants.TURNOUT_DEF_REPLY_REGEX)) ||
                 (this.matches(DCCppConstants.TURNOUT_DEF_DCC_REPLY_REGEX)) ||
@@ -1973,6 +2089,6 @@ public class DCCppReply extends jmri.jmrix.AbstractMRReply {
     }
 
     // initialize logging
-    private final static Logger log = LoggerFactory.getLogger(DCCppReply.class);
+    private static final Logger log = LoggerFactory.getLogger(DCCppReply.class);
 
 }

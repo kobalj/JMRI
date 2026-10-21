@@ -59,14 +59,14 @@ public class TrainCsvManifest extends TrainCsvCommon {
                 if (!rl.getSplitName().equals(previousRouteLocationName)) {
                     printLocationName(fileOut, rl.getSplitName());
                     if (rl != train.getTrainDepartsRouteLocation()) {
-                        fileOut.printRecord("AT", Bundle.getMessage("csvArrivalTime"), train.getExpectedArrivalTime(rl)); // NOI18N
+                        fileOut.printRecord("AT", Bundle.getMessage("csvArrivalTime"), train.getExpectedArrivalTime(rl, true)); // NOI18N
                     }
                     if (rl == train.getTrainDepartsRouteLocation()) {
-                        fileOut.printRecord("DT", Bundle.getMessage("csvDepartureTime"), train.getFormatedDepartureTime()); // NOI18N
-                    } else if (!rl.getDepartureTime().equals(RouteLocation.NONE)) {
-                        fileOut.printRecord("DTR", Bundle.getMessage("csvDepartureTimeRoute"), rl.getFormatedDepartureTime()); // NOI18N
+                        fileOut.printRecord("DT", Bundle.getMessage("csvDepartureTime"), train.getExpectedDepartureTime(rl, true)); // NOI18N
+                    } else if (!rl.getDepartureTimeHourMinutes().equals(RouteLocation.NONE)) {
+                        fileOut.printRecord("DTR", Bundle.getMessage("csvDepartureTimeRoute"), rl.getDepartureTime()); // NOI18N
                     } else {
-                        fileOut.printRecord("EDT", Bundle.getMessage("csvEstimatedDepartureTime"), train.getExpectedDepartureTime(rl)); // NOI18N
+                        fileOut.printRecord("EDT", Bundle.getMessage("csvEstimatedDepartureTime"), train.getExpectedDepartureTime(rl, true)); // NOI18N
                     }
                     printLocationComment(fileOut, rl.getLocation());
                     if (Setup.isPrintTruncateManifestEnabled() && rl.getLocation().isSwitchListEnabled()) {
@@ -171,13 +171,11 @@ public class TrainCsvManifest extends TrainCsvCommon {
             // Are there any cars that need to be found?
             listCarsLocationUnknown(fileOut);
 
-            fileOut.flush();
-            fileOut.close();
         } catch (IOException e) {
             log.error("Can not open CSV manifest file: {}", e.getLocalizedMessage());
             throw new BuildFailedException(e);
         }
     }
 
-    private final static Logger log = LoggerFactory.getLogger(TrainCsvManifest.class);
+    private static final Logger log = LoggerFactory.getLogger(TrainCsvManifest.class);
 }

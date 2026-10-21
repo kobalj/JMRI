@@ -1,15 +1,16 @@
 package jmri.implementation;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
+import java.beans.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Set;
+
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.CheckForNull;
 import javax.annotation.OverridingMethodsMustInvokeSuper;
+
 import jmri.NamedBean;
 import jmri.beans.BeanUtil;
 
@@ -296,6 +297,11 @@ public abstract class AbstractNamedBean implements NamedBean {
         pcs.firePropertyChange(p, old, n);
     }
 
+    @OverridingMethodsMustInvokeSuper
+    protected void firePropertyChange(PropertyChangeEvent evt) {
+        pcs.firePropertyChange(evt);
+    }
+
     /** {@inheritDoc} */
     @Override
     @OverridingMethodsMustInvokeSuper
@@ -305,6 +311,10 @@ public abstract class AbstractNamedBean implements NamedBean {
             pcs.removePropertyChangeListener(l);
             register.remove(l);
             listenerRefs.remove(l);
+        }
+        // the name handles of this bean are no longer needed
+        if (jmri.InstanceManager.containsDefault(jmri.NamedBeanHandleManager.class)) {
+            jmri.InstanceManager.getDefault(jmri.NamedBeanHandleManager.class).removeNamedBeanHandles(this);
         }
     }
 

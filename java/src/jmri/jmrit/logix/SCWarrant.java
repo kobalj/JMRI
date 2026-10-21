@@ -181,7 +181,7 @@ public class SCWarrant extends Warrant {
      * {@inheritDoc}
      **/
     @Override
-    protected synchronized String getRunningMessage() {
+    protected synchronized String getRunningMessagePrim() {
         if (_throttle == null) {
             // The warrant is not active
             return super.getRunningMessage();
@@ -350,12 +350,14 @@ public class SCWarrant extends Warrant {
             if (_nextSignal instanceof SignalHead) {
                 int appearance = ((SignalHead) _nextSignal).getAppearance();
                 speed = _speedMap.getAppearanceSpeed(((SignalHead) _nextSignal).getAppearanceName(appearance));
-                log.debug("{} SignalHead {} shows appearance {} which maps to speed {}",_trainName,((SignalHead) _nextSignal).getDisplayName(),appearance,speed);
+                log.debug("{} SignalHead {} shows appearance {} which maps to speed {}",
+                    _trainName, _nextSignal.getDisplayName(),appearance,speed);
             } else {
                 String aspect = ((SignalMast) _nextSignal).getAspect();
-                speed = _speedMap.getAspectSpeed((aspect == null ? "" : aspect), 
+                speed = _speedMap.getAspectSpeed((aspect == null ? "" : aspect),
                     ((SignalMast) _nextSignal).getSignalSystem());
-                log.debug("{} SignalMast {} shows aspect {} which maps to speed {}",_trainName,((SignalMast) _nextSignal).getDisplayName(),aspect,speed);
+                log.debug("{} SignalMast {} shows aspect {} which maps to speed {}",
+                    _trainName, _nextSignal.getDisplayName(),aspect,speed);
             }
             float speed_f = (float) (_speedMap.getSpeed(speed) / 125.);
             // Ease the speed, if we are approaching the destination block

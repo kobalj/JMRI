@@ -1,15 +1,19 @@
 package jmri.jmrit.operations.setup.backup;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+
+import jmri.InstanceManagerAutoDefault;
+import jmri.beans.PropertyChangeSupport;
+import jmri.jmrit.XmlFile;
+import jmri.jmrit.operations.OperationsXml;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import jmri.jmrit.XmlFile;
-import jmri.jmrit.operations.OperationsXml;
 
 /**
  * Base class for backing up and restoring Operations working files. Derived
@@ -18,9 +22,12 @@ import jmri.jmrit.operations.OperationsXml;
  *
  * @author Gregory Madsen Copyright (C) 2012
  */
-public abstract class BackupBase {
+public abstract class BackupBase extends PropertyChangeSupport implements InstanceManagerAutoDefault {
 
-    private final static Logger log = LoggerFactory.getLogger(BackupBase.class);
+    private static final Logger log = LoggerFactory.getLogger(BackupBase.class);
+
+    // Property Changes
+    public static final String COPY_FILES_CHANGED_PROPERTY = "Backup Copy Files";
 
     // Just for testing......
     // If this is not null, it will be thrown to simulate various IO exceptions
@@ -283,6 +290,7 @@ public abstract class BackupBase {
             testException.fillInStackTrace();
             throw testException;
         }
+        firePropertyChange(COPY_FILES_CHANGED_PROPERTY, sourceDir, destDir);
     }
 
     /**
@@ -322,7 +330,6 @@ public abstract class BackupBase {
         File dst = new File(getOperationsRoot(), _demoPanelFileName);
 
         FileHelper.copy(src.getAbsolutePath(), dst.getAbsolutePath(), true);
-
     }
 
     /**
@@ -411,9 +418,9 @@ public abstract class BackupBase {
      * Returns the current date formatted for use as part of a Backup Set name.
      */
     private String getDate() {
-        Date date = Calendar.getInstance().getTime();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy_MM_dd");  // NOI18N
-        return simpleDateFormat.format(date);
+        LocalDateTime date = LocalDateTime.now();
+        DateTimeFormatter simpleDateFormat = DateTimeFormatter.ofPattern("yyyy_MM_dd"); // NOI18N
+        return date.format(simpleDateFormat);
     }
 
     /**

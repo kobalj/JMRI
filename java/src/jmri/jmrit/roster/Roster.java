@@ -7,6 +7,10 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,7 +99,7 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
     // reflect to it.
     // Note that dispose() doesn't act on these.  It isn't clear whether it should...
     private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
-    static final public String schemaVersion = ""; // NOI18N
+    public static final String schemaVersion = ""; // NOI18N
     private String defaultRosterGroup = null;
     private final HashMap<String, RosterGroup> rosterGroups = new HashMap<>();
 
@@ -147,6 +151,11 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
      * rely on being able to store this value.
      */
     public static final String ALLENTRIES = Bundle.getMessage("ALLENTRIES"); // NOI18N
+    /**
+     * Title of the "No Group" roster group. As this varies by locale, do not
+     * rely on being able to store this value.
+     */
+    public static final String NOGROUP = Bundle.getMessage("NOGROUP"); // NOI18N
 
     /**
      * Create a roster with default contents.
@@ -287,7 +296,10 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
      *         group does not exist.
      */
     public int numGroupEntries(String group) {
-        if (group != null
+        log.trace("numGroupEntries for {}", group);
+        if (group != null && group.equals(Roster.NOGROUP)) {
+            return numNoGroupEntries();
+        } else if (group != null
                 && !group.equals(Roster.ALLENTRIES)
                 && !group.equals(Roster.allEntries(Locale.getDefault()))) {
             return (this.rosterGroups.get(group) != null) ? this.rosterGroups.get(group).getEntries().size() : 0;
@@ -296,6 +308,17 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
         }
     }
 
+    int numNoGroupEntries() {
+        int count = 0;
+        for (var entry : _list) {
+            if (entry.getGroups().isEmpty()) {
+                count++;
+            }
+        }
+        log.trace("numNoGroupEntries returns {}", count);
+        return count;
+    }
+    
     /**
      * Return RosterEntry from a "title" string, ala selection in
      * matchingComboBox.
@@ -378,6 +401,7 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
      *         group, or the group does not exist.
      */
     public RosterEntry getGroupEntry(String group, int i) {
+        log.trace("getGroupEntry({}, {})", group, i);
         boolean doGroup = (group != null && !group.equals(Roster.ALLENTRIES) && !group.isEmpty());
         if (!doGroup) {
             // if not trying to get a specific group entry, just get the specified
@@ -387,6 +411,8 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
             } catch (IndexOutOfBoundsException e) {
                 return null;
             }
+        } else if (group != null && group.equals(Roster.NOGROUP)) {
+            return getNoGroupEntry(i);
         }
         synchronized (_list) {
             int num = 0;
@@ -403,26 +429,63 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
         return null;
     }
 
+    RosterEntry getNoGroupEntry(int i) {
+        log.trace("getNoGroupEntry({})", i);
+        try {
+            return getNoGroupList().get(i);
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+    
+    List<RosterEntry> getNoGroupList() {
+        List<RosterEntry> result = new ArrayList<>();
+
+        getAllEntries().forEach((entry) -> {
+            if (entry.getGroups().isEmpty()) {
+                result.add(entry);
+            }
+        });
+        log.trace("getNoGroupList returns {} items", result.size());
+        return result;
+    }
+    
     public int getGroupIndex(String group, RosterEntry re) {
+        log.trace("getGroupIndex({}, {})", group, re);
         int num = 0;
         boolean doGroup = (group != null && !group.equals(Roster.ALLENTRIES) && !group.isEmpty());
+
         synchronized (_list) {
-        for (RosterEntry r : _list) {
-            if (doGroup) {
-                if ((r.getAttribute(getRosterGroupProperty(group)) != null)
-                        && r.getAttribute(getRosterGroupProperty(group)).equals("yes")) { // NOI18N
-                    if (r == re) {
+
+            if (group != null && group.equals(Roster.NOGROUP)) {
+                var list = getNoGroupList();
+                for (RosterEntry r : list) {
+                    if (re == r) {
+                        log.trace("getGroupIndex of NOGROUP returns {}", num);
                         return num;
                     }
                     num++;
                 }
-            } else {
-                if (re == r) {
-                    return num;
-                }
-                num++;
+                log.trace("getGroupIndex of NOGROUP returns -1");
+                return -1;
             }
-        }
+    
+            for (RosterEntry r : _list) {
+                if (doGroup) {
+                    if ((r.getAttribute(getRosterGroupProperty(group)) != null)
+                            && r.getAttribute(getRosterGroupProperty(group)).equals("yes")) { // NOI18N
+                        if (r == re) {
+                            return num;
+                        }
+                        num++;
+                    }
+                } else {
+                    if (re == r) {
+                        return num;
+                    }
+                    num++;
+                }
+            }
         }
         return -1;
     }
@@ -475,6 +538,8 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
         if (group == null || group.equals(Roster.ALLENTRIES) || group.isEmpty()) {
             // Return a copy of the list
             return new ArrayList<>(this._list);
+        }  else if (group.equals(Roster.NOGROUP)) {
+            return getNoGroupList();
         } else {
             return this.getEntriesWithAttributeKeyValue(Roster.getRosterGroupProperty(group), "yes"); // NOI18N
         }
@@ -863,7 +928,7 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
             Element rosterGroup = new Element("rosterGroup"); // NOI18N
             rosterGroups.keySet().forEach((name) -> {
                 Element group = new Element("group"); // NOI18N
-                if (!name.equals(Roster.ALLENTRIES)) {
+                if (!name.equals(Roster.ALLENTRIES) && !name.equals(Roster.NOGROUP)) {
                     group.addContent(name);
                     rosterGroup.addContent(group);
                 }
@@ -928,7 +993,7 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
      * @see RosterEntry#ensureFilenameExists()
      * @since 2.1.5
      */
-    static public String makeValidFilename(String entry) {
+    public static String makeValidFilename(String entry) {
         if (entry == null) {
             throw new IllegalArgumentException("makeValidFilename requires non-null argument");
         }
@@ -971,16 +1036,27 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
         // decode type, invoke proper processing routine if a decoder file
         if (root.getChild("roster") != null) { // NOI18N
             List<Element> l = root.getChild("roster").getChildren("locomotive"); // NOI18N
-            if (log.isDebugEnabled()) {
-                log.debug("readFile sees {} children", l.size());
+            log.debug("readFile sees {} children", l.size());
+
+            RosterEntry firstRosterEntry = null;
+            for (Element e : l) {  // can't be forEach because we need definitive order and non-final variable
+                // Create a RosterEntry from this element and add to Roster.
+                // Do not notify UI on each, notify once when all are done
+                var thisRosterEntry = new RosterEntry(e);
+                addEntryNoNotify(thisRosterEntry);
+                if (firstRosterEntry == null) {
+                    firstRosterEntry = thisRosterEntry;
+                }
             }
-            l.forEach((e) -> {
-                // do not notify UI on each, notify once when all are done
-                addEntryNoNotify(new RosterEntry(e));
-            });
-            // Only fire one notification: the table will redraw all entries
-            if (!l.isEmpty()) {
-                firePropertyChange(ADD, null, l.get(0));
+            // Fire one notification, the table will redraw all entries anyway
+            //
+            // This works well with e.g. the Roster Table, which knows to 
+            // handle an ADD event by doing a redraw-all.  But the JsonRosterSocketService
+            // only handles the individual roster entries that are brought to its
+            // attention via an ADD event.  So there's a mismatch here that 
+            // will need to be resolved at some point.
+            if (firstRosterEntry != null) {
+                firePropertyChange(ADD, null, firstRosterEntry);
             }
 
             //Scan the object to check the Comment and Decoder Comment fields for
@@ -1047,13 +1123,12 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
      * Store the roster in the default place, including making a backup if
      * needed.
      * <p>
-     * Uses writeFile(String), a protected method that can write to a specific
-     * location.
+     * Writes to a temporary file first, then backs up and replaces the roster
+     * index only after the temporary write succeeds.
      */
     public void writeRoster() {
-        this.makeBackupFile(this.getRosterIndexPath());
         try {
-            this.writeFile(this.getRosterIndexPath());
+            this.writeFileAtomic(this.getRosterIndexPath());
         } catch (IOException e) {
             log.error("Exception while writing the new roster file, may not be complete", e);
             try {
@@ -1151,13 +1226,10 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
             }
         }
 
-        log.debug("Making backup roster index file");
-        this.makeBackupFile(this.getRosterIndexPath());
         try {
             log.debug("Writing new index file");
-            roster.writeFile(this.getRosterIndexPath());
+            roster.writeFileAtomic(this.getRosterIndexPath());
         } catch (IOException ex) {
-            // TODO: error dialog, copy backup back to roster.xml
             log.error("Exception while writing the new roster file, may not be complete", ex);
         }
         log.debug("Reloading resulting roster index");
@@ -1194,6 +1266,51 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
 
     public String getRosterIndexPath() {
         return this.getRosterLocation() + this.getRosterIndexFileName();
+    }
+
+    private void writeFileAtomic(String name) throws IOException {
+        File file = findFile(name);
+        if (file == null) {
+            file = new File(name);
+        }
+
+        Path target = file.toPath();
+        Path temp = target.resolveSibling(file.getName() + ".new"); // NOI18N
+
+        try {
+            writeFile(temp.toFile());
+        } catch (IOException ex) {
+            deleteTempFile(temp, ex);
+            throw ex;
+        }
+
+        try {
+            if (Files.exists(target)) {
+                Files.copy(target, new File(backupFileName(file.getAbsolutePath())).toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+            moveTempFile(temp, target);
+        } catch (IOException ex) {
+            setDirty(true);
+            deleteTempFile(temp, ex);
+            throw ex;
+        }
+    }
+
+    private void moveTempFile(Path temp, Path target) throws IOException {
+        try {
+            Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException ex) {
+            Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private void deleteTempFile(Path temp, IOException originalException) {
+        try {
+            Files.deleteIfExists(temp);
+        } catch (IOException ex) {
+            originalException.addSuppressed(ex);
+        }
     }
 
     /*
@@ -1352,6 +1469,7 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
             return;
         }
         this.addRosterGroup(new RosterGroup(rg));
+        firePropertyChange(ROSTER_GROUP_ADDED, null, rg);
     }
 
     /**
@@ -1411,7 +1529,8 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
             re.putAttribute(newGroup, "yes"); // NOI18N
         });
         this.addRosterGroup(new RosterGroup(newName));
-        // the firePropertyChange event will be called by addRosterGroup()
+
+        firePropertyChange(ROSTER_GROUP_ADDED, oldName, newName);
     }
 
     public void rosterGroupRenamed(String oldName, String newName) {
@@ -1444,11 +1563,26 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
      * Strings are immutable, so deleting an item from the copy should not
      * affect the system-wide list of roster groups.
      *
-     * @return A list of the roster group names.
+     * @return A list of the roster group names not including All Entries and No Group.
      */
     public ArrayList<String> getRosterGroupList() {
         ArrayList<String> list = new ArrayList<>(this.rosterGroups.keySet());
         Collections.sort(list);
+        return list;
+    }
+
+    /**
+     * Get a list of the roster group names.
+     * <p>
+     * Strings are immutable, so deleting an item from the copy should not
+     * affect the system-wide list of roster groups.
+     *
+     * @return A list of the roster group names including No Group, not including All Entries
+     */
+    public ArrayList<String> getRosterGroupListWithNoGroup() {
+        ArrayList<String> list = new ArrayList<>(this.rosterGroups.keySet());
+        Collections.sort(list);
+        list.add(NOGROUP);
         return list;
     }
 
@@ -1586,5 +1720,5 @@ public class Roster extends XmlFile implements RosterGroupSelector, PropertyChan
         }
     }
 
-    private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Roster.class);
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Roster.class);
 }

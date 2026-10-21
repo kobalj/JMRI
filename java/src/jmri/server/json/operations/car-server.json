@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "jmri-json-car-server-message",
     "type": "object",
     "description": "Data portion of message from JMRI to client for type \"car\"",
@@ -7,6 +7,10 @@
         "name": {
             "type": "string",
             "description": "Operations id for car"
+        },
+        "order": {
+            "type": "string",
+            "description": "The car order"
         },
         "road": {
             "type": "string",
@@ -29,9 +33,9 @@
         },
         "carSubType": {
             "type": [
-            	"string",
-            	"null"
-        	],
+                "string",
+                "null"
+            ],
             "description": "The car sub-type; not displayed in manifests and switch lists"
         },
         "rfid": {
@@ -171,11 +175,11 @@
             "description": "The location to return the car to when loaded or null"
         },
         "division": {
-            "type":"string",
+            "type": "string",
             "description": "division name for the car"
         },
         "block order": {
-            "type":"string",
+            "type": "string",
             "description": "blocking order for passenger car"
         },
         "status": {
@@ -201,6 +205,18 @@
         "weightTons": {
             "type": "string",
             "description": "Weight of car in tons"
+        },
+        "last train": {
+            "type": "string",
+            "description": "Last train to carry car"
+        },
+        "last moved": {
+            "type": "string",
+            "description": "date the car was last moved"
+        },
+        "last location": {
+            "type": "string",
+            "description": "The car's last location"
         }
     },
     "additionalProperties": false,

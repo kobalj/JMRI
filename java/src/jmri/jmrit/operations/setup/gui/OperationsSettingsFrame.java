@@ -32,10 +32,10 @@ public class OperationsSettingsFrame extends OperationsFrame {
         toolMenu.addSeparator();
         toolMenu.add(new BackupFilesAction());
         toolMenu.add(new RestoreFilesAction());
+        toolMenu.add(new ManageBackupsAction());
         toolMenu.addSeparator();
         toolMenu.add(new LoadDemoAction());
         toolMenu.add(new ResetAction());
-        toolMenu.add(new ManageBackupsAction());
 
         menuBar.add(toolMenu);
         menuBar.add(new jmri.jmrit.operations.OperationsMenu());
@@ -45,5 +45,5 @@ public class OperationsSettingsFrame extends OperationsFrame {
         initMinimumSize(new Dimension(Control.panelWidth700, Control.panelHeight500));
     }
 
-//    private final static Logger log = LoggerFactory.getLogger(OperationsSetupFrame.class);
+//    private static final Logger log = LoggerFactory.getLogger(OperationsSetupFrame.class);
 }

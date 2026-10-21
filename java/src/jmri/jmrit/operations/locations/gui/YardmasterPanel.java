@@ -17,7 +17,8 @@ import jmri.jmrit.operations.rollingstock.cars.Car;
 import jmri.jmrit.operations.routes.RouteLocation;
 import jmri.jmrit.operations.setup.Control;
 import jmri.jmrit.operations.setup.Setup;
-import jmri.jmrit.operations.trains.*;
+import jmri.jmrit.operations.trains.Train;
+import jmri.jmrit.operations.trains.TrainManager;
 import jmri.jmrit.operations.trains.trainbuilder.TrainCommon;
 
 /**
@@ -227,7 +228,8 @@ public class YardmasterPanel extends CommonConductorYardmasterPanel {
                     updateTrackComments(rl, !IS_MANIFEST);
                     
                     String msg = TrainCommon.getSwitchListTrainStatus(_train, rl);
-                    textTrainStatusPane.setText(msg);
+                    textTrainStatusPane.setText(TrainCommon.getOnlyText(msg));
+                    textTrainStatusPane.setForeground(TrainCommon.getTextColor(msg));
                     textTrainStatusPane.setVisible(!msg.isBlank());
 
                     // check for locos
@@ -237,6 +239,7 @@ public class YardmasterPanel extends CommonConductorYardmasterPanel {
                     blockCars(rl, !IS_MANIFEST);
 
                     textStatus.setText(getStatus(rl, !IS_MANIFEST));
+                    textStatus.setForeground(getStatusColor());
                 }
                 updateComplete();
             }
@@ -258,13 +261,13 @@ public class YardmasterPanel extends CommonConductorYardmasterPanel {
         if (selectedItem != null) {
             trainComboBox.setSelectedItem(selectedItem);
         }
-        padComboBox(trainComboBox);
+        padComboBox(trainComboBox, Control.max_len_string_train_name);
         trainComboBox.setVisible(true);
     }
 
     private void addTrainListeners() {
         log.debug("Adding train listerners");
-        List<Train> trains = InstanceManager.getDefault(TrainManager.class).getTrainsByIdList();
+        List<Train> trains = InstanceManager.getDefault(TrainManager.class).getList();
         trains.stream().forEach((train) -> {
             train.addPropertyChangeListener(this);
         });
@@ -274,7 +277,7 @@ public class YardmasterPanel extends CommonConductorYardmasterPanel {
 
     private void removeTrainListeners() {
         log.debug("Removing train listerners");
-        List<Train> trains = InstanceManager.getDefault(TrainManager.class).getTrainsByIdList();
+        List<Train> trains = InstanceManager.getDefault(TrainManager.class).getList();
         trains.stream().forEach((train) -> {
             train.removePropertyChangeListener(this);
         });
@@ -313,5 +316,5 @@ public class YardmasterPanel extends CommonConductorYardmasterPanel {
         }
     }
 
-    private final static Logger log = LoggerFactory.getLogger(YardmasterPanel.class);
+    private static final Logger log = LoggerFactory.getLogger(YardmasterPanel.class);
 }

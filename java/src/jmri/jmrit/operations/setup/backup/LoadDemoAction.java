@@ -9,9 +9,7 @@ import jmri.InstanceManager;
 import jmri.ShutDownManager;
 import jmri.jmrit.operations.OperationsManager;
 import jmri.jmrit.operations.OperationsXml;
-import jmri.util.swing.ExceptionContext;
-import jmri.util.swing.ExceptionDisplayFrame;
-import jmri.util.swing.JmriJOptionPane;
+import jmri.util.swing.*;
 
 /**
  * Swing action to load the operation demo files.
@@ -22,7 +20,7 @@ import jmri.util.swing.JmriJOptionPane;
  */
 public class LoadDemoAction extends AbstractAction {
 
-//    private final static Logger log = LoggerFactory.getLogger(LoadDemoAction.class);
+//    private static final Logger log = LoggerFactory.getLogger(LoadDemoAction.class);
 
     public LoadDemoAction() {
         super(Bundle.getMessage("LoadDemo"));
@@ -44,7 +42,7 @@ public class LoadDemoAction extends AbstractAction {
             return;
         }
 
-        AutoBackup backup = new AutoBackup();
+        AutoBackup backup = InstanceManager.getDefault(AutoBackup.class);
 
         try {
             backup.autoBackup();

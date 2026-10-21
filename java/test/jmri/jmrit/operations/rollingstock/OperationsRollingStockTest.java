@@ -71,14 +71,21 @@ public class OperationsRollingStockTest extends OperationsTestCase {
         e.setAttribute(Xml.DATE, "2015/05/15 15:15:15");
         e.setAttribute(Xml.SELECTED, Xml.FALSE);
         e.setAttribute(Xml.LAST_LOCATION_ID, "TESTLASTLOCATION");
+        e.setAttribute(Xml.LAST_TRACK_ID, "TESTLASTTRACK");
         e.setAttribute(Xml.TRAIN, "TESTTRAIN");
+        e.setAttribute(Xml.TRAIN_ID, "TESTTRAINID");
+        e.setAttribute(Xml.LAST_TRAIN_ID, "TESTLASTTRAINID");
         e.setAttribute(Xml.OWNER, "TESTOWNER");
         e.setAttribute(Xml.VALUE, "TESTVALUE");
         e.setAttribute(Xml.RFID, "12345");
         e.setAttribute(Xml.LOC_UNKNOWN, Xml.FALSE);
         e.setAttribute(Xml.OUT_OF_SERVICE, Xml.FALSE);
         e.setAttribute(Xml.BLOCKING, "5");
+        e.setAttribute(Xml.CLONE, Xml.FALSE);
         e.setAttribute(Xml.COMMENT, "Test Comment");
+        e.setAttribute(Xml.PICKUP_TIME, "TESTPICKUPTIME");
+        e.setAttribute(Xml.SETOUT_TIME, "TESTSETOUTTIME");
+        e.setAttribute(Xml.DIVISION_ID, "TESTDIVISIONID");
         e.setAttribute("wait", "6");
 
         Assertions.assertDoesNotThrow( () ->  {
@@ -100,7 +107,7 @@ public class OperationsRollingStockTest extends OperationsTestCase {
 
         rs1.setTypeName("TESTTYPE");
         rs1.setLength("TESTLENGTH");
-        rs1.setColor("TESTCOLOR");
+        rs1.setColorName("TESTCOLOR");
         rs1.setWeight("TESTWEIGHT");
         rs1.setWeightTons("TESTWEIGHTTONS");
         rs1.setBuilt("TESTBUILT");
@@ -117,7 +124,7 @@ public class OperationsRollingStockTest extends OperationsTestCase {
         /* Also need to test location length */
         Assert.assertEquals("Car Length", "TESTLENGTH", rs1.getLength());
 
-        Assert.assertEquals("Car Color", "TESTCOLOR", rs1.getColor());
+        Assert.assertEquals("Car Color", "TESTCOLOR", rs1.getColorName());
         /* More appropriate Weight tests below */
         Assert.assertEquals("Car Weight", "TESTWEIGHT", rs1.getWeight());
         Assert.assertEquals("Car WeightTons", "TESTWEIGHTTONS", rs1.getWeightTons());

@@ -3,7 +3,7 @@ package jmri.jmrit.operations.setup.backup;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -141,12 +141,12 @@ public class RestoreDialog extends JDialog {
 
     // Event handlers
     protected void do_automaticBackupsRadioButton_actionPerformed(ActionEvent e) {
-        backup = new AutoBackup();
+        backup = InstanceManager.getDefault(AutoBackup.class);
         loadComboBox();
     }
 
     protected void do_defaultBackupsRadioButton_actionPerformed(ActionEvent e) {
-        backup = new DefaultBackup();
+        backup = InstanceManager.getDefault(DefaultBackup.class);
         loadComboBox();
     }
 
@@ -192,14 +192,14 @@ public class RestoreDialog extends JDialog {
 
         // first backup the users data in case they forgot
         try {
-            AutoBackup auto = new AutoBackup();
+            AutoBackup auto = InstanceManager.getDefault(AutoBackup.class);
             auto.autoBackup();
 
             // now delete the current operations files in case the restore isn't a full set of files
             backup.deleteOperationsFiles();
 
             setName = ((BackupSet) comboBox.getSelectedItem()).getSetName();
-            Date date = ((BackupSet) comboBox.getSelectedItem()).getLastModifiedDate();
+            LocalDateTime date = ((BackupSet) comboBox.getSelectedItem()).getLastModifiedDate();
             String sd = String.format("%s", date);
 
             log.info(Bundle.getMessage("InfoRestoringSet", setName, sd));

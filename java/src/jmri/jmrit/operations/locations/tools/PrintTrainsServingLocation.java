@@ -12,7 +12,8 @@ import jmri.jmrit.operations.locations.Track;
 import jmri.jmrit.operations.routes.Route;
 import jmri.jmrit.operations.routes.RouteLocation;
 import jmri.jmrit.operations.setup.Control;
-import jmri.jmrit.operations.trains.*;
+import jmri.jmrit.operations.trains.Train;
+import jmri.jmrit.operations.trains.TrainManager;
 import jmri.jmrit.operations.trains.trainbuilder.TrainCommon;
 import jmri.util.davidflanagan.HardcopyWriter;
 
@@ -22,7 +23,7 @@ import jmri.util.davidflanagan.HardcopyWriter;
 public class PrintTrainsServingLocation {
 
     public static final String NEW_LINE = "\n"; // NOI18N
-    static final String TAB = "\t"; // NOI18N
+    protected static final String TAB = "\t"; // NOI18N
 
     boolean _isPreview;
     Location _location;
@@ -46,12 +47,13 @@ public class PrintTrainsServingLocation {
             title = _location.getName();
         }
         try (HardcopyWriter writer =
-                new HardcopyWriter(new Frame(), title, Control.reportFontSize, .5, .5, .5, .5, _isPreview)) {
+                new HardcopyWriter(new Frame(), title, null, null, Control.reportFontSize, .5 * 72, .5 * 72, .5 * 72,
+                        .5 * 72, _isPreview, "", false, true, null, null)) {
 
             printTrains(writer);
 
         } catch (HardcopyWriter.PrintCanceledException ex) {
-            log.debug("Print cancelled");
+            log.debug("Print canceled");
         } catch (IOException we) {
             log.error("Error printing PrintLocationAction: {}", we.getLocalizedMessage());
         }
@@ -145,5 +147,5 @@ public class PrintTrainsServingLocation {
         return TrainCommon.padAndTruncate(s, length);
     }
 
-    private final static Logger log = LoggerFactory.getLogger(PrintTrainsServingLocation.class);
+    private static final Logger log = LoggerFactory.getLogger(PrintTrainsServingLocation.class);
 }

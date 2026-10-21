@@ -80,6 +80,7 @@ public class RoutesTableFrame extends OperationsFrame {
         JMenu toolMenu = new JMenu(Bundle.getMessage("MenuTools"));
         toolMenu.add(new RouteCopyAction());
         toolMenu.add(new SetTrainIconPositionAction());
+        toolMenu.addSeparator();
         toolMenu.add(new ExportRoutesAction());
         toolMenu.add(new ImportRoutesAction());
         toolMenu.addSeparator();
@@ -96,7 +97,7 @@ public class RoutesTableFrame extends OperationsFrame {
         addHelpMenu("package.jmri.jmrit.operations.Operations_Routes", true); // NOI18N
 
         initMinimumSize(new Dimension(Control.panelWidth700, Control.panelHeight300));
- 
+
         // create ShutDownTasks
         createShutDownTask();
     }
@@ -133,5 +134,5 @@ public class RoutesTableFrame extends OperationsFrame {
         super.dispose();
     }
 
-    private final static Logger log = LoggerFactory.getLogger(RoutesTableFrame.class);
+    private static final Logger log = LoggerFactory.getLogger(RoutesTableFrame.class);
 }

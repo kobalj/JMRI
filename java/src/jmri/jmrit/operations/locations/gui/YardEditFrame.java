@@ -2,8 +2,10 @@ package jmri.jmrit.operations.locations.gui;
 
 import javax.swing.BorderFactory;
 
-import jmri.jmrit.operations.locations.*;
+import jmri.jmrit.operations.locations.Location;
+import jmri.jmrit.operations.locations.Track;
 import jmri.jmrit.operations.locations.tools.ChangeTrackTypeAction;
+import jmri.jmrit.operations.locations.tools.TrackPriorityAction;
 
 /**
  * Frame for user edit of a yard
@@ -16,18 +18,23 @@ public class YardEditFrame extends TrackEditFrame {
         super(Bundle.getMessage("AddYard"));
     }
     
-    @Override
-    public void initComponents(Track track) {
-        setTitle(Bundle.getMessage("EditYard", track.getLocation().getName()));
+    public YardEditFrame(Location location) {
+        super(Bundle.getMessage("AddYard"));
+        initComponents(location, null);
+    }
+    
+    public YardEditFrame(Track track) {
+        super(Bundle.getMessage("EditYard", track.getLocation().getName()));
         initComponents(track.getLocation(), track);
     }
 
     @Override
-    public void initComponents(Location location, Track track) {
+    protected void initComponents(Location location, Track track) {
         _type = Track.YARD;
         super.initComponents(location, track);
 
-        _toolMenu.insert(new ChangeTrackTypeAction(this), TOOL_MENU_OFFSET);
+        _toolMenu.insert(new TrackPriorityAction(_track), 0);
+        _toolMenu.insert(new ChangeTrackTypeAction(this), TOOL_MENU_OFFSET + 1);
         addHelpMenu("package.jmri.jmrit.operations.Operations_Yards", true); // NOI18N
 
         // override text strings for tracks
@@ -39,9 +46,10 @@ public class YardEditFrame extends TrackEditFrame {
         // finish
         dropPanel.setVisible(false); // don't show drop and pick up panel
         pickupPanel.setVisible(false);
+        panelQuickService.setVisible(true);
         pack();
         setVisible(true);
     }
 
-//    private final static Logger log = LoggerFactory.getLogger(YardEditFrame.class);
+//    private static final Logger log = LoggerFactory.getLogger(YardEditFrame.class);
 }

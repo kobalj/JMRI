@@ -134,13 +134,23 @@ public final class OlcbSensor extends AbstractSensor {
 
     public EventID getEventID(boolean isActive) {
         if (isActive) return addrActive.toEventID();
-        else return addrInactive.toEventID();
+        else {
+            if (addrInactive != null) {
+                return addrInactive.toEventID();
+            } else {
+                return null;
+            }
+        }
     }
 
     @Override
     @CheckReturnValue
     @Nonnull
     public String getRecommendedToolTip() {
+        // Some events are not pairs
+        if (addrInactive == null) {
+            return addrActive.toDottedString();
+        }
         return addrActive.toDottedString()+";"+addrInactive.toDottedString();
     }
 
@@ -309,6 +319,6 @@ public final class OlcbSensor extends AbstractSensor {
         return OlcbAddress.compareSystemNameSuffix(suffix1, suffix2, memo);
     }
 
-    private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OlcbSensor.class);
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OlcbSensor.class);
 
 }
